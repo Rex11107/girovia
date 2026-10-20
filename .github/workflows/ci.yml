@@ -41,6 +41,8 @@ jobs:
     name: Dati reali di Firenze e provincia
     needs: codice
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # per salvare rapporto e screenshot nel ramo "risultati-test"
     continue-on-error: true # un servizio esterno lento non deve bloccare le modifiche
     steps:
       - uses: actions/checkout@v4
@@ -50,13 +52,30 @@ jobs:
           cache: npm
       - run: npm ci
       - name: API reali (orari, linee, fermate, auto, piedi)
-        run: node tests/live-api.mjs
+        run: node tests/live-api.mjs 2>&1 | tee live-api.log; exit ${PIPESTATUS[0]}
+        shell: bash
       - name: Browser per i test
         if: always()
         run: npx playwright install --with-deps chromium
       - name: App completa con dati reali
         if: always()
-        run: npx playwright test --project=live
+        run: npx playwright test --project=live --reporter=list 2>&1 | tee live-ui.log; exit ${PIPESTATUS[0]}
+        shell: bash
+      - name: Salva i risultati nel ramo risultati-test
+        if: always() && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -e
+          mkdir -p /tmp/out/screens
+          cp live-report.md live-api.log live-ui.log /tmp/out/ 2>/dev/null || true
+          find test-results -name "*.png" -exec cp {} /tmp/out/screens/ \; 2>/dev/null || true
+          echo "${{ github.sha }} $(date -u +%FT%TZ)" > /tmp/out/RUN.txt
+          cd /tmp/out
+          git init -q -b risultati-test
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "Risultati test ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" risultati-test
       - uses: actions/upload-artifact@v4
         if: always()
         with:
