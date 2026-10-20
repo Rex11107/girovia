@@ -34,6 +34,15 @@ L'app si pubblica da sola su **https://rex11107.github.io/girovia/** a ogni modi
 
 Apri l'indirizzo con Chrome (Android) o Safari (iPhone) e scegli **Aggiungi a schermata Home**. Da lì si apre come un'app normale, a schermo intero.
 
+## App Android (APK)
+
+Scarica l'ultima versione dal telefono:
+**https://github.com/Rex11107/girovia/releases/latest/download/girovia.apk**
+
+Aprila e consenti l'installazione da questa fonte quando Android lo chiede. Gli aggiornamenti si installano sopra la versione precedente: l'APK è sempre firmato con la stessa chiave, salvata cifrata in `android-src/release.p12.enc` e sbloccata in GitHub Actions dal segreto `APK_KEY_PASS`.
+
+L'APK contiene l'app (funziona anche se GitHub Pages è giù), usa gli stessi servizi del sito e gestisce il tasto Indietro del telefono. Viene ricompilato a ogni modifica dell'app.
+
 ## Controlli automatici
 
 A ogni modifica e a ogni pull request, GitHub Actions esegue:
@@ -57,5 +66,6 @@ In locale: `npm ci`, poi `npm run lint`, `npm test` e `npm run test:live`.
 - `tests/`: test con dati di esempio e con dati reali
 - `.github/workflows/`: controlli e pubblicazione
 - `manifest.webmanifest`, icone: installazione sulla schermata Home
+- `capacitor.config.json`, `android-src/`: app Android (icone, avvio, permessi, chiave cifrata)
 
 Licenza MIT.

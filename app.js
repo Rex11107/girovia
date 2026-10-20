@@ -665,6 +665,18 @@
   if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name: "geolocation" }).then((p) => { if (p.state === "granted") locate(); }).catch(() => {});
   window.addEventListener("resize", () => { const h = $("#sheet").getBoundingClientRect().height, s = SNAP(); let best = 0; s.forEach((v, i) => { if (Math.abs(v - h) < Math.abs(s[best] - h)) best = i; }); setSheet(best); });
 
+  // App Android: il tasto Indietro del telefono torna alla schermata precedente invece di chiudere l'app
+  const capApp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+  if (capApp && capApp.addListener) {
+    capApp.addListener("backButton", () => {
+      if (!$("#sugg").hidden) { hideSugg(); blurInputs(); return; }
+      if (map._popup && map.hasLayer(map._popup)) { map.closePopup(); return; }
+      if (!$("#back").hidden) { $("#back").click(); return; }
+      if (state.viewKind !== "home") { state.from = null; state.to = null; syncInputs(); drawPins(); routeLayer.clearLayers(); homeView(); return; }
+      capApp.exitApp();
+    });
+  }
+
   // Per i test
   window.__girovia = { map, prettyName, decodePolyline, osrmText, fmtDur, fmtDist, state, showResults, showItin, view };
 })();
