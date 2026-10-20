@@ -33,6 +33,12 @@
   const delayMin = (real, sched) => (real && sched) ? Math.round((new Date(real) - new Date(sched)) / 60000) : 0;
   const minutesUntil = (iso) => Math.round((new Date(iso) - Date.now()) / 60000);
   const sameDay = (a, b) => fmtDay(a) === fmtDay(b);
+  function dayLabel(iso) {
+    const now = Date.now();
+    if (fmtDay(iso) === fmtDay(new Date(now).toISOString())) return "Oggi";
+    if (fmtDay(iso) === fmtDay(new Date(now + 864e5).toISOString())) return "Domani";
+    return fmtDay(iso);
+  }
   const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
   function store(key, val) { try { if (val === undefined) return JSON.parse(localStorage.getItem("girovia." + key) || "null"); localStorage.setItem("girovia." + key, JSON.stringify(val)); } catch (e) { return null; } }
@@ -53,6 +59,33 @@
     };
     while (i < str.length) { lat += next(); lon += next(); out.push([lat / f, lon / f]); }
     return out;
+  }
+
+  // I dati GTFS di AT arrivano spesso TUTTI MAIUSCOLI: "SCALA SANTA MARIA NOVELLA" → "Scala Santa Maria Novella".
+  // Le sigle restano maiuscole (SMN, FS, SS67, AT).
+  const SMALL = new Set(["di", "de", "del", "dell", "della", "dello", "dei", "degli", "delle", "da", "dal", "dalla", "e", "ed", "in", "a", "al", "alla", "allo", "ai", "agli", "alle", "sul", "sulla", "per", "con", "tra", "fra"]);
+  const KEEP = /^(SS|SR|SP|FS|SMN|AT|ATAF|GEST|RFI|TFT|II|III|IV|VI|VII|VIII|IX|XI|XII|XX|XXIV|XXV|A1|A11|FI-PI-LI)$/;
+  function prettyName(str) {
+    if (typeof str !== "string" || !/[A-ZÀ-Ý]{3}/.test(str) || str !== str.toUpperCase()) return str;
+    let first = true;
+    return str.replace(/[A-ZÀ-Ý0-9]+/g, (w, idx) => {
+      const prev = str[idx - 1];
+      const after = prev === "'" || prev === "’" || prev === ".";
+      let out;
+      if (KEEP.test(w) || /\d/.test(w) || !/[AEIOUÀÈÉÌÒÙ]/.test(w)) out = w;
+      else if (!first && !after && SMALL.has(w.toLowerCase())) out = w.toLowerCase();
+      else out = w.charAt(0) + w.slice(1).toLowerCase();
+      first = false;
+      return out;
+    });
+  }
+  function prettify(o) {
+    if (Array.isArray(o)) { o.forEach(prettify); return o; }
+    if (o && typeof o === "object") for (const k of Object.keys(o)) {
+      if ((k === "name" || k === "headsign") && typeof o[k] === "string") o[k] = prettyName(o[k]);
+      else if (o[k] && typeof o[k] === "object") prettify(o[k]);
+    }
+    return o;
   }
 
   // ---------- Accesso ai servizi ----------
@@ -76,7 +109,7 @@
         break;
       }
       knownVersion[endpoint] = v;
-      return res.json();
+      return prettify(await res.json());
     }
     throw lastErr || new Error("Servizio orari non disponibile.");
   }
@@ -184,6 +217,15 @@
     RAIL: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="6" y="3" width="12" height="14" rx="3"/><path d="M6 11h12M8 21l2-4M16 21l-2-4"/></svg>',
     TRAM: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 3h6M12 3v3M9 21l1-3M15 21l-1-3"/></svg>'
   };
+  function stopModes(modes) {
+    if (!Array.isArray(modes) || !modes.length) return "";
+    const out = [];
+    for (const m of modes) {
+      const n = /RAIL|SUBURBAN|LONG_DISTANCE|HIGHSPEED/.test(m) ? "Treno" : ({ BUS: "Bus", COACH: "Pullman", TRAM: "Tram", SUBWAY: "Metro", FERRY: "Traghetto", FUNICULAR: "Funicolare" })[m];
+      if (n && !out.includes(n)) out.push(n);
+    }
+    return out.join(", ");
+  }
   const placeLabel = (m) => m.type === "ADDRESS" && m.street ? `${m.street}${m.houseNumber ? " " + m.houseNumber : ""}` : m.name;
   function areaLabel(m) {
     const a = (m.areas || []).filter((x) => x.name && x.name !== m.name).sort((x, y) => (y.adminLevel || 0) - (x.adminLevel || 0));
@@ -206,7 +248,7 @@
       try {
         const res = await motis("geocode", { text: q, language: "it", place: `${c.lat},${c.lng}`, placeBias: 1.5, numResults: 8 }, geoAbort.signal);
         if (state.activeField !== field) return;
-        renderSugg(field, (res || []).map((m) => ({ id: m.type === "STOP" ? m.id : undefined, lat: m.lat, lon: m.lon, name: placeLabel(m), sub: areaLabel(m), type: m.type })));
+        renderSugg(field, (res || []).map((m) => ({ id: m.type === "STOP" ? m.id : undefined, lat: m.lat, lon: m.lon, name: placeLabel(m), sub: [stopModes(m.modes), areaLabel(m)].filter(Boolean).join(" · "), type: m.type })));
       } catch (e) { if (e.name !== "AbortError") renderSugg(field, [], e.message); }
     }, 280);
   }
@@ -453,7 +495,7 @@
     const dl = firstT ? delayMin(firstT.startTime, firstT.scheduledStartTime) : 0;
     const walkM = legs.filter((l) => l.mode === "WALK").reduce((a, l) => a + l.duration, 0);
     const chain = legs.filter((l) => !(l.mode === "WALK" && l.duration < 60 && legs.length > 1)).map(legChip).join('<span class="sep">›</span>');
-    const day = !sameDay(it.startTime, new Date().toISOString()) ? `<span>${fmtDay(it.startTime)}</span>` : "";
+    const day = !sameDay(it.startTime, new Date(Date.now()).toISOString()) ? `<span>${fmtDay(it.startTime)}</span>` : "";
     return `<button class="itin" data-it="${i}">
       <div class="top"><span class="times">${fmtTime(it.startTime)} – ${fmtTime(it.endTime)}</span><span class="dur">${fmtDur(it.duration)}</span></div>
       <div class="chain">${chain}</div>
@@ -593,17 +635,19 @@
     try {
       const r = await motis("stoptimes", { stopId: stop.id, n: 25, time: new Date().toISOString(), language: "it" });
       const list = r.stopTimes || [];
+      let lastDay = dayLabel(new Date(Date.now()).toISOString());
       const html = `<div class="row" style="margin-bottom:6px"><button class="btn small primary" data-go="to">Portami qui</button><button class="btn small" data-go="from">Parti da qui</button></div>
         ${list.length ? list.map((s, i) => {
           const t = s.place.departure || s.place.arrival; const sch = s.place.scheduledDeparture || s.place.scheduledArrival;
+          const day = dayLabel(t); const head = day !== lastDay ? `<div class="label">${esc(day)}</div>` : ""; lastDay = day;
           const m = minutesUntil(t); const dd = delayMin(t, sch);
           const when = m <= 0 ? "ora" : (m < 60 ? `${m} min` : fmtTime(t));
           const bg = s.routeColor ? "#" + s.routeColor : "var(--transit)"; const fg = s.routeTextColor ? "#" + s.routeTextColor : "#fff";
           const name = s.routeShortName || s.displayName || s.tripShortName || modeName(s.mode);
-          return `<button class="dep" data-d="${i}"><span class="chip" style="background:${bg};color:${fg}">${modeIcon(s.mode)}${esc(name)}</span>
+          return `${head}<button class="dep" data-d="${i}"><span class="chip" style="background:${bg};color:${fg}">${modeIcon(s.mode)}${esc(name)}</span>
             <span class="hs"><b>${esc(s.headsign || (s.tripTo && s.tripTo.name) || "")}</b><span class="small muted">${esc(s.agencyName || "")}${s.place.track ? " · bin. " + esc(s.place.track) : ""}</span></span>
             <span class="in ${s.cancelled || s.tripCancelled ? "cancel" : ""}">${when}<small>${fmtTime(t)}${s.realTime ? (dd > 0 ? ` <span class="late">+${dd}</span>` : ' <span class="rt">live</span>') : ""}</small></span></button>`;
-        }).join("") : '<p class="empty">Nessuna partenza nelle prossime ore da questa fermata.</p>'}`;
+        }).join("") : '<p class="empty">Nessuna partenza trovata da questa fermata.</p>'}`;
       view(stop.name, html, { level: 1, draw: () => { routeLayer.clearLayers(); L.circleMarker([stop.lat, stop.lon], { radius: 8, color: cssVar("--surface"), weight: 3, fillColor: cssVar("--transit"), fillOpacity: 1 }).addTo(routeLayer); }, bind: (root) => {
         root.querySelectorAll("[data-go]").forEach((b) => b.onclick = () => setPlace(b.dataset.go, { ...stop, type: "STOP" }));
         root.querySelectorAll("[data-d]").forEach((b) => b.onclick = () => { const s = list[+b.dataset.d]; showTrip(s.tripId, stop.id); });
@@ -622,5 +666,5 @@
   window.addEventListener("resize", () => { const h = $("#sheet").getBoundingClientRect().height, s = SNAP(); let best = 0; s.forEach((v, i) => { if (Math.abs(v - h) < Math.abs(s[best] - h)) best = i; }); setSheet(best); });
 
   // Per i test
-  window.__girovia = { map, decodePolyline, osrmText, fmtDur, fmtDist, state, showResults, showItin, view };
+  window.__girovia = { map, prettyName, decodePolyline, osrmText, fmtDur, fmtDist, state, showResults, showItin, view };
 })();

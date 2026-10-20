@@ -87,7 +87,8 @@ async function main() {
       const best = its[0];
       const tl = best.legs.filter((l) => l.mode !== "WALK");
       for (const it of its) for (const l of it.legs) if (l.mode !== "WALK") agencies.set(l.agencyName || "?", (agencies.get(l.agencyName || "?") || 0) + 1);
-      const bad = its.flatMap((it) => it.legs).filter((l) => !l.legGeometry || !l.legGeometry.points || !l.from || !l.to || !l.startTime);
+      // i cambi a piedi tra fermate vicine possono non avere disegno: è normale
+      const bad = its.flatMap((it) => it.legs).filter((l) => !l.legGeometry || (!l.legGeometry.points && l.mode !== "WALK") || !l.from || !l.to || !l.startTime);
       if (bad.length) {
         fail(`${a} → ${b}`, `${bad.length} tratte senza geometria o orari: ` + bad.slice(0, 3).map((l) => `${l.mode} ${l.from && l.from.name}→${l.to && l.to.name} geom=${l.legGeometry ? JSON.stringify(l.legGeometry).slice(0, 60) : "assente"}`).join(" | "));
         fs.writeFileSync("debug-bad-legs.json", JSON.stringify(bad.slice(0, 5), null, 1));

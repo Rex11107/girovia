@@ -272,7 +272,12 @@
      "matched": true
     }
    ],
-   "score": 1
+   "score": 1,
+   "modes": [
+    "REGIONAL_RAIL",
+    "BUS",
+    "BUS"
+   ]
   },
   {
    "type": "ADDRESS",
@@ -362,6 +367,26 @@
     "routeColor": "1565C0",
     "agencyName": "Autolinee Toscane",
     "tripId": "trip_7",
+    "cancelled": false,
+    "tripCancelled": false
+   },
+   {
+    "place": {
+     "name": "SMN",
+     "lat": 43.7764,
+     "lon": 11.248,
+     "departure": "2026-10-22T05:10:00Z",
+     "scheduledDeparture": "2026-10-22T05:10:00Z",
+     "arrival": "2026-10-22T05:10:00Z",
+     "scheduledArrival": "2026-10-22T05:10:00Z"
+    },
+    "mode": "BUS",
+    "realTime": false,
+    "headsign": "Pontassieve",
+    "routeShortName": "Linea 7",
+    "routeColor": "1565C0",
+    "agencyName": "Autolinee Toscane",
+    "tripId": "trip_7b",
     "cancelled": false,
     "tripCancelled": false
    }

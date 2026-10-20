@@ -1,14 +1,16 @@
 name: Pubblica su GitHub Pages
 
+# Copia i file dell'app nel ramo gh-pages, da cui GitHub Pages pubblica il sito
+# su https://rex11107.github.io/girovia/
+
 on:
   push:
     branches: [main]
+    paths-ignore: ["tests/**", "README.md"]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -17,18 +19,19 @@ concurrency:
 jobs:
   pubblica:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Prepara solo i file dell'app
+      - name: Copia l'app nel ramo gh-pages
+        shell: bash
         run: |
-          mkdir _site
-          cp index.html app.js config.js manifest.webmanifest icon.svg icon-192.png icon-512.png LICENSE _site/
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-      - id: deploy
-        uses: actions/deploy-pages@v4
+          set -e
+          mkdir -p /tmp/site
+          cp index.html app.js config.js manifest.webmanifest icon.svg icon-192.png icon-512.png LICENSE /tmp/site/
+          touch /tmp/site/.nojekyll
+          cd /tmp/site
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "Pubblica ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" gh-pages
