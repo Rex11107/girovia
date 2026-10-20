@@ -1,0 +1,68 @@
+name: Controlli
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 5 * * 1-5" # ogni giorno feriale: verifica che i dati reali rispondano ancora
+
+permissions:
+  contents: read
+
+jobs:
+  codice:
+    name: Codice e interfaccia
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: ESLint e validazione HTML
+        run: npm run lint
+      - name: Browser per i test
+        run: npx playwright install --with-deps chromium
+      - name: Test interfaccia con dati di esempio
+        run: npm test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshot-test
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 14
+
+  dati-reali:
+    name: Dati reali di Firenze e provincia
+    needs: codice
+    runs-on: ubuntu-latest
+    continue-on-error: true # un servizio esterno lento non deve bloccare le modifiche
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: API reali (orari, linee, fermate, auto, piedi)
+        run: node tests/live-api.mjs
+      - name: Browser per i test
+        if: always()
+        run: npx playwright install --with-deps chromium
+      - name: App completa con dati reali
+        if: always()
+        run: npx playwright test --project=live
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dati-reali
+          path: |
+            live-report.md
+            test-results/
+            playwright-report/
+          retention-days: 14

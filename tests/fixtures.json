@@ -1,0 +1,499 @@
+{
+ "plan": {
+  "requestParameters": {},
+  "debugOutput": {},
+  "from": {
+   "name": "START",
+   "lat": 43.7764,
+   "lon": 11.248
+  },
+  "to": {
+   "name": "END",
+   "lat": 43.7745,
+   "lon": 11.433
+  },
+  "direct": [],
+  "itineraries": [
+   {
+    "id": "a",
+    "duration": 3000,
+    "startTime": "2026-10-21T06:35:00Z",
+    "endTime": "2026-10-21T07:25:00Z",
+    "transfers": 0,
+    "legs": [
+     {
+      "mode": "WALK",
+      "startTime": "2026-10-21T06:35:00Z",
+      "endTime": "2026-10-21T06:40:00Z",
+      "scheduledStartTime": "2026-10-21T06:35:00Z",
+      "scheduledEndTime": "2026-10-21T06:40:00Z",
+      "realTime": false,
+      "scheduled": true,
+      "duration": 300,
+      "distance": 380,
+      "from": {
+       "name": "START",
+       "lat": 43.7764,
+       "lon": 11.248
+      },
+      "to": {
+       "name": "Firenze Stazione SMN",
+       "lat": 43.777,
+       "lon": 11.2475,
+       "departure": "2026-10-21T06:40:00Z",
+       "scheduledDeparture": "2026-10-21T06:40:00Z",
+       "arrival": "2026-10-21T06:40:00Z",
+       "scheduledArrival": "2026-10-21T06:40:00Z",
+       "stopId": "at_1"
+      },
+      "legGeometry": {
+       "points": "_x{nrA_womTod@f^",
+       "precision": 6,
+       "length": 2
+      },
+      "steps": [
+       {
+        "relativeDirection": "DEPART",
+        "distance": 120,
+        "streetName": "Via Nazionale",
+        "polyline": {
+         "points": "",
+         "precision": 6,
+         "length": 0
+        }
+       },
+       {
+        "relativeDirection": "LEFT",
+        "distance": 260,
+        "streetName": "Piazza della Stazione",
+        "polyline": {
+         "points": "",
+         "precision": 6,
+         "length": 0
+        }
+       }
+      ]
+     },
+     {
+      "mode": "BUS",
+      "startTime": "2026-10-21T06:40:00Z",
+      "endTime": "2026-10-21T07:25:00Z",
+      "scheduledStartTime": "2026-10-21T06:36:00Z",
+      "scheduledEndTime": "2026-10-21T07:21:00Z",
+      "realTime": true,
+      "scheduled": true,
+      "duration": 2700,
+      "from": {
+       "name": "Firenze Stazione SMN",
+       "lat": 43.777,
+       "lon": 11.2475,
+       "departure": "2026-10-21T06:40:00Z",
+       "scheduledDeparture": "2026-10-21T06:40:00Z",
+       "arrival": "2026-10-21T06:40:00Z",
+       "scheduledArrival": "2026-10-21T06:40:00Z",
+       "stopId": "at_1"
+      },
+      "to": {
+       "name": "Pontassieve Piazza Vittorio Emanuele",
+       "lat": 43.7745,
+       "lon": 11.433,
+       "departure": "2026-10-21T07:25:00Z",
+       "scheduledDeparture": "2026-10-21T07:25:00Z",
+       "arrival": "2026-10-21T07:25:00Z",
+       "scheduledArrival": "2026-10-21T07:25:00Z",
+       "stopId": "at_9"
+      },
+      "routeShortName": "Linea 7",
+      "routeColor": "1565C0",
+      "routeTextColor": "FFFFFF",
+      "headsign": "Pontassieve",
+      "agencyName": "Autolinee Toscane",
+      "tripId": "trip_7",
+      "intermediateStops": [
+       {
+        "name": "Firenze Campo di Marte",
+        "lat": 43.776,
+        "lon": 11.28,
+        "departure": "2026-10-21T06:50:00Z",
+        "scheduledDeparture": "2026-10-21T06:50:00Z",
+        "arrival": "2026-10-21T06:50:00Z",
+        "scheduledArrival": "2026-10-21T06:50:00Z",
+        "stopId": "at_2"
+       },
+       {
+        "name": "Compiobbi",
+        "lat": 43.775,
+        "lon": 11.33,
+        "departure": "2026-10-21T07:05:00Z",
+        "scheduledDeparture": "2026-10-21T07:05:00Z",
+        "arrival": "2026-10-21T07:05:00Z",
+        "scheduledArrival": "2026-10-21T07:05:00Z",
+        "stopId": "at_5"
+       },
+       {
+        "name": "Sieci",
+        "lat": 43.78,
+        "lon": 11.39,
+        "departure": "2026-10-21T07:15:00Z",
+        "scheduledDeparture": "2026-10-21T07:15:00Z",
+        "arrival": "2026-10-21T07:15:00Z",
+        "scheduledArrival": "2026-10-21T07:15:00Z",
+        "stopId": "at_7"
+       }
+      ],
+      "legGeometry": {
+       "points": "o}|nrAwwnmTn}@gn~@n}@_t`BowH_etBvvIo~rA",
+       "precision": 6,
+       "length": 5
+      }
+     }
+    ]
+   },
+   {
+    "id": "b",
+    "duration": 1560,
+    "startTime": "2026-10-21T06:55:00Z",
+    "endTime": "2026-10-21T07:21:00Z",
+    "transfers": 0,
+    "legs": [
+     {
+      "mode": "WALK",
+      "startTime": "2026-10-21T06:55:00Z",
+      "endTime": "2026-10-21T07:00:00Z",
+      "scheduledStartTime": "2026-10-21T06:35:00Z",
+      "scheduledEndTime": "2026-10-21T06:40:00Z",
+      "realTime": false,
+      "scheduled": true,
+      "duration": 300,
+      "distance": 380,
+      "from": {
+       "name": "START",
+       "lat": 43.7764,
+       "lon": 11.248
+      },
+      "to": {
+       "name": "Firenze Stazione SMN",
+       "lat": 43.777,
+       "lon": 11.2475,
+       "departure": "2026-10-21T06:40:00Z",
+       "scheduledDeparture": "2026-10-21T06:40:00Z",
+       "arrival": "2026-10-21T06:40:00Z",
+       "scheduledArrival": "2026-10-21T06:40:00Z",
+       "stopId": "at_1"
+      },
+      "legGeometry": {
+       "points": "_x{nrA_womTod@f^",
+       "precision": 6,
+       "length": 2
+      },
+      "steps": [
+       {
+        "relativeDirection": "DEPART",
+        "distance": 120,
+        "streetName": "Via Nazionale",
+        "polyline": {
+         "points": "",
+         "precision": 6,
+         "length": 0
+        }
+       },
+       {
+        "relativeDirection": "LEFT",
+        "distance": 260,
+        "streetName": "Piazza della Stazione",
+        "polyline": {
+         "points": "",
+         "precision": 6,
+         "length": 0
+        }
+       }
+      ]
+     },
+     {
+      "mode": "REGIONAL_RAIL",
+      "startTime": "2026-10-21T07:02:00Z",
+      "endTime": "2026-10-21T07:21:00Z",
+      "scheduledStartTime": "2026-10-21T07:02:00Z",
+      "scheduledEndTime": "2026-10-21T07:21:00Z",
+      "realTime": false,
+      "scheduled": true,
+      "duration": 1140,
+      "from": {
+       "name": "Firenze Stazione SMN",
+       "lat": 43.777,
+       "lon": 11.2475,
+       "departure": "2026-10-21T06:40:00Z",
+       "scheduledDeparture": "2026-10-21T06:40:00Z",
+       "arrival": "2026-10-21T06:40:00Z",
+       "scheduledArrival": "2026-10-21T06:40:00Z",
+       "stopId": "at_1",
+       "track": "12"
+      },
+      "to": {
+       "name": "Pontassieve Piazza Vittorio Emanuele",
+       "lat": 43.7745,
+       "lon": 11.433,
+       "departure": "2026-10-21T07:25:00Z",
+       "scheduledDeparture": "2026-10-21T07:25:00Z",
+       "arrival": "2026-10-21T07:25:00Z",
+       "scheduledArrival": "2026-10-21T07:25:00Z",
+       "stopId": "at_9"
+      },
+      "routeShortName": "R",
+      "routeTextColor": "FFFFFF",
+      "headsign": "Arezzo",
+      "agencyName": "Trenitalia",
+      "tripId": "trip_R",
+      "intermediateStops": [],
+      "legGeometry": {
+       "points": "o}|nrAwwnmTn}@gn~@n}@_t`BowH_etBvvIo~rA",
+       "precision": 6,
+       "length": 5
+      }
+     }
+    ]
+   }
+  ],
+  "previousPageCursor": "p",
+  "nextPageCursor": "n"
+ },
+ "geo": [
+  {
+   "type": "STOP",
+   "name": "Firenze Santa Maria Novella",
+   "id": "tr_smn",
+   "lat": 43.7764,
+   "lon": 11.248,
+   "tokens": [],
+   "areas": [
+    {
+     "name": "Firenze",
+     "adminLevel": 8,
+     "matched": true
+    }
+   ],
+   "score": 1
+  },
+  {
+   "type": "ADDRESS",
+   "name": "x",
+   "street": "Via Nazionale",
+   "houseNumber": "10",
+   "id": "a1",
+   "lat": 43.778,
+   "lon": 11.252,
+   "tokens": [],
+   "areas": [
+    {
+     "name": "Firenze",
+     "adminLevel": 8,
+     "matched": false
+    },
+    {
+     "name": "Toscana",
+     "adminLevel": 4,
+     "matched": false
+    }
+   ],
+   "score": 0.5
+  }
+ ],
+ "geo2": [
+  {
+   "type": "PLACE",
+   "name": "Pontassieve",
+   "id": "p",
+   "lat": 43.7745,
+   "lon": 11.433,
+   "tokens": [],
+   "areas": [
+    {
+     "name": "Città Metropolitana di Firenze",
+     "adminLevel": 6,
+     "matched": false
+    }
+   ],
+   "score": 1
+  }
+ ],
+ "stoptimes": {
+  "place": {
+   "name": "Firenze SMN",
+   "lat": 43.7764,
+   "lon": 11.248
+  },
+  "previousPageCursor": "",
+  "nextPageCursor": "",
+  "stopTimes": [
+   {
+    "place": {
+     "name": "SMN",
+     "lat": 43.7764,
+     "lon": 11.248,
+     "departure": "2026-10-21T06:42:00Z",
+     "scheduledDeparture": "2026-10-21T06:40:00Z",
+     "arrival": "2026-10-21T06:42:00Z",
+     "scheduledArrival": "2026-10-21T06:42:00Z",
+     "track": "5"
+    },
+    "mode": "REGIONAL_RAIL",
+    "realTime": true,
+    "headsign": "Firenze Borgo San Lorenzo",
+    "routeShortName": "RV",
+    "agencyName": "Trenitalia",
+    "tripId": "trip_R",
+    "cancelled": false,
+    "tripCancelled": false
+   },
+   {
+    "place": {
+     "name": "SMN",
+     "lat": 43.7764,
+     "lon": 11.248,
+     "departure": "2026-10-21T06:50:00Z",
+     "scheduledDeparture": "2026-10-21T06:50:00Z",
+     "arrival": "2026-10-21T06:50:00Z",
+     "scheduledArrival": "2026-10-21T06:50:00Z"
+    },
+    "mode": "BUS",
+    "realTime": false,
+    "headsign": "Pontassieve",
+    "routeShortName": "Linea 7",
+    "routeColor": "1565C0",
+    "agencyName": "Autolinee Toscane",
+    "tripId": "trip_7",
+    "cancelled": false,
+    "tripCancelled": false
+   }
+  ]
+ },
+ "osrm": {
+  "code": "Ok",
+  "routes": [
+   {
+    "duration": 1500,
+    "distance": 19800,
+    "geometry": "_x{nrA_womT_qY_qdBnh\\_ry@f^odhE",
+    "legs": [
+     {
+      "summary": "SS67",
+      "steps": [
+       {
+        "maneuver": {
+         "type": "depart"
+        },
+        "name": "Via Nazionale",
+        "distance": 300
+       },
+       {
+        "maneuver": {
+         "type": "turn",
+         "modifier": "right"
+        },
+        "name": "Viale Spartaco Lavagnini",
+        "distance": 1200
+       },
+       {
+        "maneuver": {
+         "type": "roundabout",
+         "exit": 2
+        },
+        "name": "SS67",
+        "distance": 17000
+       },
+       {
+        "maneuver": {
+         "type": "arrive"
+        },
+        "name": "",
+        "distance": 0
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ "trip": {
+  "id": "t",
+  "duration": 2700,
+  "startTime": "2026-10-21T06:40:00Z",
+  "endTime": "2026-10-21T07:25:00Z",
+  "transfers": 0,
+  "legs": [
+   {
+    "mode": "BUS",
+    "startTime": "2026-10-21T06:40:00Z",
+    "endTime": "2026-10-21T07:25:00Z",
+    "scheduledStartTime": "2026-10-21T06:36:00Z",
+    "scheduledEndTime": "2026-10-21T07:21:00Z",
+    "realTime": true,
+    "scheduled": true,
+    "duration": 2700,
+    "from": {
+     "name": "Firenze Stazione SMN",
+     "lat": 43.777,
+     "lon": 11.2475,
+     "departure": "2026-10-21T06:40:00Z",
+     "scheduledDeparture": "2026-10-21T06:40:00Z",
+     "arrival": "2026-10-21T06:40:00Z",
+     "scheduledArrival": "2026-10-21T06:40:00Z",
+     "stopId": "at_1"
+    },
+    "to": {
+     "name": "Pontassieve Piazza Vittorio Emanuele",
+     "lat": 43.7745,
+     "lon": 11.433,
+     "departure": "2026-10-21T07:25:00Z",
+     "scheduledDeparture": "2026-10-21T07:25:00Z",
+     "arrival": "2026-10-21T07:25:00Z",
+     "scheduledArrival": "2026-10-21T07:25:00Z",
+     "stopId": "at_9"
+    },
+    "routeShortName": "Linea 7",
+    "routeColor": "1565C0",
+    "routeTextColor": "FFFFFF",
+    "headsign": "Pontassieve",
+    "agencyName": "Autolinee Toscane",
+    "tripId": "trip_7",
+    "intermediateStops": [
+     {
+      "name": "Firenze Campo di Marte",
+      "lat": 43.776,
+      "lon": 11.28,
+      "departure": "2026-10-21T06:50:00Z",
+      "scheduledDeparture": "2026-10-21T06:50:00Z",
+      "arrival": "2026-10-21T06:50:00Z",
+      "scheduledArrival": "2026-10-21T06:50:00Z",
+      "stopId": "at_2"
+     },
+     {
+      "name": "Compiobbi",
+      "lat": 43.775,
+      "lon": 11.33,
+      "departure": "2026-10-21T07:05:00Z",
+      "scheduledDeparture": "2026-10-21T07:05:00Z",
+      "arrival": "2026-10-21T07:05:00Z",
+      "scheduledArrival": "2026-10-21T07:05:00Z",
+      "stopId": "at_5"
+     },
+     {
+      "name": "Sieci",
+      "lat": 43.78,
+      "lon": 11.39,
+      "departure": "2026-10-21T07:15:00Z",
+      "scheduledDeparture": "2026-10-21T07:15:00Z",
+      "arrival": "2026-10-21T07:15:00Z",
+      "scheduledArrival": "2026-10-21T07:15:00Z",
+      "stopId": "at_7"
+     }
+    ],
+    "legGeometry": {
+     "points": "o}|nrAwwnmTn}@gn~@n}@_t`BowH_etBvvIo~rA",
+     "precision": 6,
+     "length": 5
+    }
+   }
+  ]
+ }
+}

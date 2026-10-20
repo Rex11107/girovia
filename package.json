@@ -1,0 +1,22 @@
+{
+  "name": "girovia",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Mezzi pubblici, auto e piedi per Firenze e la Toscana",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint . && html-validate index.html",
+    "test": "playwright test --project=mock",
+    "test:live": "node tests/live-api.mjs && playwright test --project=live",
+    "serve": "http-server -p 4173 -s -c-1 ."
+  },
+  "devDependencies": {
+    "@eslint/js": "9.17.0",
+    "@playwright/test": "1.56.1",
+    "eslint": "9.17.0",
+    "globals": "15.14.0",
+    "html-validate": "9.1.3",
+    "http-server": "14.1.1",
+    "leaflet": "^1.9.4"
+  }
+}
