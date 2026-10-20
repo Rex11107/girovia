@@ -67,7 +67,7 @@ jobs:
         run: |
           set -e
           mkdir -p /tmp/out/screens
-          cp live-report.md live-api.log live-ui.log /tmp/out/ 2>/dev/null || true
+          cp live-report.md live-api.log live-ui.log debug-*.json /tmp/out/ 2>/dev/null || true
           find test-results -name "*.png" -exec cp {} /tmp/out/screens/ \; 2>/dev/null || true
           echo "${{ github.sha }} $(date -u +%FT%TZ)" > /tmp/out/RUN.txt
           cd /tmp/out

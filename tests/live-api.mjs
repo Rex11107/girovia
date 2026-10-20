@@ -88,7 +88,10 @@ async function main() {
       const tl = best.legs.filter((l) => l.mode !== "WALK");
       for (const it of its) for (const l of it.legs) if (l.mode !== "WALK") agencies.set(l.agencyName || "?", (agencies.get(l.agencyName || "?") || 0) + 1);
       const bad = its.flatMap((it) => it.legs).filter((l) => !l.legGeometry || !l.legGeometry.points || !l.from || !l.to || !l.startTime);
-      if (bad.length) fail(`${a} → ${b}`, `${bad.length} tratte senza geometria o orari`);
+      if (bad.length) {
+        fail(`${a} → ${b}`, `${bad.length} tratte senza geometria o orari: ` + bad.slice(0, 3).map((l) => `${l.mode} ${l.from && l.from.name}→${l.to && l.to.name} geom=${l.legGeometry ? JSON.stringify(l.legGeometry).slice(0, 60) : "assente"}`).join(" | "));
+        fs.writeFileSync("debug-bad-legs.json", JSON.stringify(bad.slice(0, 5), null, 1));
+      }
       if (!sampleTrip) { const l = tl.find((x) => x.tripId); if (l) sampleTrip = l; }
       ok(`${a} → ${b}`, `${its.length} soluzioni; prima ${fmt(best.startTime)}–${fmt(best.endTime)}: ${tl.map((l) => `${l.mode} ${l.routeShortName || l.displayName || ""} (${l.agencyName || "?"})`).join(" + ") || "a piedi"}`);
     } catch (e) { fail(`${a} → ${b}`, e.message); }
@@ -102,6 +105,9 @@ async function main() {
     if (!smnStop) throw new Error("fermata SMN non trovata dalla ricerca");
     const r = await motis("stoptimes", { stopId: smnStop.id, n: 10, time, language: "it" });
     const st = r.stopTimes || [];
+    const now = await motis("stoptimes", { stopId: smnStop.id, n: 15, time: new Date().toISOString(), language: "it" });
+    const slim = (x) => ({ dep: x.place.departure, sched: x.place.scheduledDeparture, stopId: x.place.stopId, stop: x.place.name, route: x.routeShortName, headsign: x.headsign, tripId: x.tripId, agency: x.agencyName, realTime: x.realTime, looped: x.loopedCalendarSince, source: x.source });
+    fs.writeFileSync("debug-stoptimes.json", JSON.stringify({ requested08: time, stopId: smnStop.id, at08: st.map(slim), requestedNow: new Date().toISOString(), now: (now.stopTimes || []).map(slim) }, null, 1));
     if (!st.length) fail(`Partenze da ${smnStop.name}`, "lista vuota");
     else ok(`Partenze da ${smnStop.name}`, st.slice(0, 5).map((s) => `${fmt(s.place.departure || s.place.arrival)} ${s.routeShortName || s.displayName || s.mode} → ${s.headsign}`).join(" · "));
   } catch (e) { fail("Partenze", e.message); }
