@@ -5,11 +5,12 @@ Mezzi pubblici, auto e piedi per Firenze e la Toscana, in un'unica app. Senza pu
 ## Cosa fa
 
 - **Mezzi pubblici**: percorsi con bus Autolinee Toscane, treni Trenitalia e TFT, tramvia, con cambi e tratti a piedi. Orari ufficiali (open data GTFS).
-- **Partenze da una fermata**: prossimi passaggi, binario, ritardo quando il dato in tempo reale esiste.
-- **Corsa intera**: tutte le fermate di una linea con gli orari e il tragitto disegnato sulla mappa.
-- **Auto e a piedi**: percorso, distanza, tempo e indicazioni svolta per svolta.
+- **Navigazione in auto e a piedi**: segue il GPS, mostra la prossima indicazione in grande, la legge a voce in italiano (disattivabile), ricalcola se esci dal percorso e tiene lo schermo acceso.
+- **Segui il viaggio con i mezzi**: ti guida a piedi alla fermata, mostra le fermate che mancano e avvisa a voce e con vibrazione quando scendere. Nell'app Android programma anche una notifica 2 minuti prima dell'arrivo, che suona anche a telefono in tasca.
+- **Partenze da una fermata**: prossimi passaggi divisi per giorno, binario, ritardo quando il dato in tempo reale esiste.
+- **Corsa intera**: tutte le fermate di una linea con gli orari e il tragitto sulla mappa.
+- **Recenti, Viaggi salvati, Preferiti** (con Casa e Lavoro): tutto salvato solo sul telefono.
 - **Fermate sulla mappa**: avvicinati con lo zoom e tocca una fermata per vederne gli orari.
-- **Tocco sulla mappa**: scegli qualsiasi punto come partenza o arrivo.
 
 ## Da dove arrivano i dati
 
@@ -25,7 +26,7 @@ L'app non ha un server suo: il telefono chiede i dati direttamente a questi serv
 
 - Per i bus di Autolinee Toscane oggi non esiste un feed pubblico in tempo reale: vedi gli **orari programmati**. Dove il dato live esiste, l'app lo mostra.
 - I tempi **in auto non considerano il traffico**.
-- Per la **navigazione vocale** in auto, il pulsante "Apri in un'app di navigazione" passa la destinazione a Organic Maps, OsmAnd o simili.
+- La navigazione funziona con l'app aperta. Gli avvisi di discesa a schermo spento si basano sull'orario previsto, non sul GPS.
 - Transitous è un servizio gratuito gestito da volontari: va bene per uso personale, non commerciale.
 
 ## Metterla sul telefono

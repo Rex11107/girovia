@@ -66,7 +66,22 @@
   const SMALL = new Set(["di", "de", "del", "dell", "della", "dello", "dei", "degli", "delle", "da", "dal", "dalla", "e", "ed", "in", "a", "al", "alla", "allo", "ai", "agli", "alle", "sul", "sulla", "per", "con", "tra", "fra"]);
   const KEEP = /^(SS|SR|SP|FS|SMN|AT|ATAF|GEST|RFI|TFT|II|III|IV|VI|VII|VIII|IX|XI|XII|XX|XXIV|XXV|A1|A11|FI-PI-LI)$/;
   function prettyName(str) {
-    if (typeof str !== "string" || !/[A-ZÀ-Ý]{3}/.test(str) || str !== str.toUpperCase()) return str;
+    if (typeof str !== "string" || !/[A-ZÀ-Ý]{3}/.test(str)) return str;
+    if (str !== str.toUpperCase()) {
+      // Testo misto: sistema solo le parole tutte maiuscole (se sono almeno due, o lunghe)
+      const caps = (str.match(/(^|[^A-Za-zÀ-ÿ])([A-ZÀ-Ý]{2,})(?![a-zà-ÿ])/g) || []).map((x) => x.replace(/^[^A-ZÀ-Ý]/, ""))
+        .filter((w) => !KEEP.test(w) && /[AEIOUÀÈÉÌÒÙ]/.test(w));
+      if (!caps.length) return str;
+      const many = caps.length >= 2;
+      let firstWord = true;
+      return str.replace(/[A-Za-zÀ-ÿ0-9]+/g, (w, idx) => {
+        const isFirst = firstWord; firstWord = false;
+        if (w !== w.toUpperCase() || /\d/.test(w) || KEEP.test(w) || !/[AEIOUÀÈÉÌÒÙ]/.test(w) || !(many || w.length >= 4)) return w;
+        const prev = str[idx - 1];
+        if (!isFirst && prev !== "'" && SMALL.has(w.toLowerCase())) return w.toLowerCase();
+        return w.charAt(0) + w.slice(1).toLowerCase();
+      });
+    }
     let first = true;
     return str.replace(/[A-ZÀ-Ý0-9]+/g, (w, idx) => {
       const prev = str[idx - 1];
@@ -160,12 +175,15 @@
     } catch (err) { /* resta "Punto sulla mappa" */ }
   });
   function popupHtml(p) {
-    return `<b>${esc(p.name)}</b>${p.sub ? `<div class="muted small">${esc(p.sub)}</div>` : ""}<div class="popbtns"><button class="btn small primary" data-pop="from">Parti da qui</button><button class="btn small" data-pop="to">Arriva qui</button></div>`;
+    return `<b>${esc(p.name)}</b>${p.sub ? `<div class="muted small">${esc(p.sub)}</div>` : ""}<div class="popbtns"><button class="btn small primary" data-pop="from">Parti da qui</button><button class="btn small" data-pop="to">Arriva qui</button><button class="btn small" data-pop="fav" aria-label="Preferito">${isFav(p) ? "★" : "☆"}</button></div>`;
   }
   function bindPopup(pop, p) {
     setTimeout(() => {
       const el = pop.getElement(); if (!el) return;
-      el.querySelectorAll("[data-pop]").forEach((b) => b.onclick = () => { map.closePopup(); setPlace(b.dataset.pop, { ...p }); });
+      el.querySelectorAll("[data-pop]").forEach((b) => b.onclick = () => {
+        if (b.dataset.pop === "fav") { b.textContent = toggleFav(p) ? "★" : "☆"; return; }
+        map.closePopup(); setPlace(b.dataset.pop, { ...p });
+      });
     }, 0);
   }
 
@@ -215,8 +233,13 @@
     WALK: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="13" cy="4" r="2"/><path d="M11 21l2-6-3-3 1-5 4 3 3 1M10 12l-3 2"/></svg>',
     CAR: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 16v-4l2-5h12l2 5v4z"/><circle cx="7.5" cy="16.5" r="1.8"/><circle cx="16.5" cy="16.5" r="1.8"/></svg>',
     RAIL: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="6" y="3" width="12" height="14" rx="3"/><path d="M6 11h12M8 21l2-4M16 21l-2-4"/></svg>',
-    TRAM: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 3h6M12 3v3M9 21l1-3M15 21l-1-3"/></svg>'
+    TRAM: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 3h6M12 3v3M9 21l1-3M15 21l-1-3"/></svg>',
+    FAV: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>',
+    HOME: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></svg>',
+    WORK: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 13h18"/></svg>',
+    TRIP: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="18" r="2.5"/><rect x="15.5" y="3.5" width="5" height="5" rx="1"/><path d="M8 16.5c4-1 2-7 7.5-9"/></svg>'
   };
+  const TRASH = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
   function stopModes(modes) {
     if (!Array.isArray(modes) || !modes.length) return "";
     const out = [];
@@ -253,14 +276,21 @@
     }, 280);
   }
   function showSuggDefaults(field) {
-    const items = [{ name: "La mia posizione", type: "ME", sub: "Usa il GPS" }];
-    (store("recent") || []).forEach((r) => items.push({ ...r, recent: true }));
+    const items = state.pickFor ? [] : [{ name: "La mia posizione", type: "ME", sub: "Usa il GPS" }];
+    const f = favs();
+    if (!state.pickFor) {
+      if (f.home) items.push({ ...f.home, icon: "HOME", sub: "Casa" });
+      if (f.work) items.push({ ...f.work, icon: "WORK", sub: "Lavoro" });
+      f.list.forEach((x) => items.push({ ...x, icon: "FAV" }));
+    }
+    (store("recent") || []).forEach((r) => { if (!items.some((x) => samePlace(x, r))) items.push({ ...r, name: prettyName(r.name), recent: true }); });
+    if (!items.length) { $("#sugg").hidden = true; return; }
     renderSugg(field, items);
   }
   function renderSugg(field, items, error) {
     const box = $("#sugg");
     if (!items.length) { box.innerHTML = `<div class="empty" style="padding:12px">${esc(error || "Nessun risultato. Prova con il nome del comune, della via o della fermata.")}</div>`; box.hidden = false; return; }
-    box.innerHTML = items.map((it, i) => `<button type="button" data-i="${i}"><span class="sicon">${ICONS[it.recent ? "RECENT" : it.type] || ICONS.ADDRESS}</span><span class="stext"><b>${esc(it.name)}</b>${it.sub ? `<small>${it.type === "STOP" ? "Fermata · " : ""}${esc(it.sub)}</small>` : (it.type === "STOP" ? "<small>Fermata</small>" : "")}</span></button>`).join("");
+    box.innerHTML = items.map((it, i) => `<button type="button" data-i="${i}"><span class="sicon">${ICONS[it.icon || (it.recent ? "RECENT" : it.type)] || ICONS.ADDRESS}</span><span class="stext"><b>${esc(it.name)}</b>${it.sub ? `<small>${it.type === "STOP" ? "Fermata · " : ""}${esc(it.sub)}</small>` : (it.type === "STOP" ? "<small>Fermata</small>" : "")}</span></button>`).join("");
     box.hidden = false;
     box.querySelectorAll("button").forEach((b) => {
       b.addEventListener("pointerdown", (e) => e.preventDefault()); // non togliere il focus prima del click
@@ -268,7 +298,7 @@
         const it = items[+b.dataset.i];
         hideSugg(); blurInputs();
         if (it.type === "ME") { locate(field); return; }
-        const p = { ...it }; delete p.recent; setPlace(field, p);
+        const p = { ...it }; delete p.recent; delete p.icon; setPlace(field, p);
       };
     });
   }
@@ -282,12 +312,36 @@
     input.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== $("#from") && document.activeElement !== $("#to")) { hideSugg(); if (state[f]) input.value = state[f].name; } }, 150));
     input.addEventListener("keydown", (e) => { if (e.key === "Enter") { const first = $("#sugg button"); if (first) first.click(); } });
   });
-  document.querySelectorAll("[data-clear]").forEach((b) => b.onclick = () => { const f = b.dataset.clear; state[f] = null; $("#" + f).value = ""; b.hidden = true; drawPins(); routeLayer.clearLayers(); $("#" + f).focus(); });
+  document.querySelectorAll("[data-clear]").forEach((b) => b.onclick = () => {
+    const f = b.dataset.clear; state[f] = null; $("#" + f).value = ""; b.hidden = true; drawPins(); routeLayer.clearLayers();
+    if (state.viewKind !== "home") homeView(); // torna alle schede (recenti, viaggi, preferiti)
+    $("#" + f).focus();
+  });
   $("#swap").onclick = () => { [state.from, state.to] = [state.to, state.from]; syncInputs(); drawPins(); maybeSearch(); };
 
   function syncInputs() {
     for (const f of ["from", "to"]) { $("#" + f).value = state[f] ? state[f].name : ""; $(`[data-clear="${f}"]`).hidden = !state[f]; }
   }
+  // Preferiti: Casa, Lavoro e altri luoghi; viaggi salvati (partenza, arrivo, mezzo)
+  const samePlace = (a, b) => a && b && Math.abs(a.lat - b.lat) < 1e-5 && Math.abs(a.lon - b.lon) < 1e-5;
+  const slim = (p) => ({ id: p.id, lat: p.lat, lon: p.lon, name: p.name, sub: p.sub, type: p.type === "ME" ? "POINT" : p.type });
+  function favs() { const f = store("favs") || {}; return { home: f.home || null, work: f.work || null, list: Array.isArray(f.list) ? f.list : [] }; }
+  function isFav(p) { const f = favs(); return f.list.some((x) => samePlace(x, p)); }
+  function toggleFav(p) {
+    const f = favs();
+    if (isFav(p)) { f.list = f.list.filter((x) => !samePlace(x, p)); toast("Tolto dai preferiti"); }
+    else { f.list.unshift(slim(p)); toast("Aggiunto ai preferiti"); }
+    store("favs", f); return isFav(p);
+  }
+  const trips = () => (Array.isArray(store("trips")) ? store("trips") : []);
+  const sameTrip = (t) => samePlace(t.from, state.from) && samePlace(t.to, state.to) && t.mode === state.mode;
+  function toggleTrip() {
+    let list = trips();
+    if (list.some(sameTrip)) { list = list.filter((t) => !sameTrip(t)); toast("Viaggio tolto dai salvati"); }
+    else { list.unshift({ from: slim(state.from), to: slim(state.to), mode: state.mode }); toast("Viaggio salvato"); }
+    store("trips", list.slice(0, 30)); return list.some(sameTrip);
+  }
+
   function remember(p) {
     if (p.type === "ME" || p.type === "POINT") return;
     const list = (store("recent") || []).filter((r) => !(Math.abs(r.lat - p.lat) < 1e-5 && Math.abs(r.lon - p.lon) < 1e-5));
@@ -295,6 +349,12 @@
     store("recent", list.slice(0, 8));
   }
   function setPlace(field, p) {
+    if (state.pickFor) {
+      const f = favs(); f[state.pickFor] = slim(p); store("favs", f);
+      toast(state.pickFor === "home" ? "Casa salvata" : "Lavoro salvato");
+      state.pickFor = null; $("#to").placeholder = "Arrivo";
+      state.to = null; syncInputs(); homeView("fav"); return;
+    }
     state[field] = p; remember(p); syncInputs(); drawPins();
     if (state.from && state.to) { maybeSearch(); return; }
     // Solo una fermata scelta: mostra subito le partenze
@@ -369,19 +429,62 @@
   const loading = (title) => view(title, '<div class="spinner" role="status" aria-label="Caricamento"></div>', { level: 1, kind: "loading" });
   const errorBox = (msg, retry) => `<div class="err">${esc(msg)}</div>${retry ? '<button class="btn" data-retry>Riprova</button>' : ""}`;
 
-  function homeView() {
-    const rec = store("recent") || [];
-    const html = `
-      <p class="muted" style="margin:0 0 6px">Scrivi partenza e arrivo, oppure tocca un punto sulla mappa. Avvicinati con lo zoom per vedere le fermate e i loro orari.</p>
-      ${rec.length ? `<div class="label">Luoghi recenti</div>${rec.map((r, i) => `<button class="recent" data-r="${i}"><span class="sicon">${ICONS[r.type] || ICONS.RECENT}</span><span class="stext"><b>${esc(r.name)}</b>${r.sub ? `<small>${esc(r.sub)}</small>` : ""}</span></button>`).join("")}` : ""}
-      <div class="label">Dati</div>
-      <p class="small muted" style="margin:0">Orari ufficiali GTFS di Autolinee Toscane, Trenitalia e tramvia tramite Transitous. Mappa e strade da OpenStreetMap. I tempi in auto non tengono conto del traffico. Nessun account, nessuna pubblicità, nessun tracciamento: le ricerche recenti restano solo su questo telefono.</p>
-      ${CFG.contact ? `<p class="small muted" style="margin:8px 0 0">Progetto e contatti: <a href="${esc(CFG.contact)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(CFG.contact.replace(/^https?:\/\//, ""))}</a></p>` : ""}`;
-    view("Dove vuoi andare?", html, { root: true, level: 0, kind: "home", bind: (root) => {
+  // Schermata iniziale divisa in schede: Recenti, Viaggi salvati, Preferiti, Info
+  const TABS = [["recent", "Recenti"], ["trips", "Viaggi"], ["fav", "Preferiti"], ["info", "Info"]];
+  const MODE_LABEL = { TRANSIT: "Mezzi", CAR: "Auto", WALK: "A piedi" };
+  const row = (attrs, icon, title, sub, del) => `<div class="rowitem"><button class="recent" ${attrs}><span class="sicon">${icon}</span><span class="stext"><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</span></button>${del ? `<button class="iconbtn" ${del} aria-label="Elimina">${TRASH}</button>` : ""}</div>`;
+  function homeView(tab) {
+    tab = TABS.some(([k]) => k === tab) ? tab : (store("homeTab") || "recent");
+    store("homeTab", tab);
+    const rec = store("recent") || [], tr = trips(), f = favs();
+    let body = "";
+    if (tab === "recent") {
+      body = rec.length ? rec.map((r, i) => row(`data-r="${i}"`, ICONS[r.type] || ICONS.RECENT, prettyName(r.name), r.sub, "")).join("") +
+        '<button class="btn small" data-clear-recent style="margin-top:10px">Cancella cronologia</button>'
+        : '<p class="empty">Qui compariranno i luoghi che cerchi.</p>';
+    } else if (tab === "trips") {
+      body = tr.length ? tr.map((t, i) => row(`data-t="${i}"`, ICONS.TRIP, `${prettyName(t.from.name)} → ${prettyName(t.to.name)}`, MODE_LABEL[t.mode] || "", `data-del-t="${i}"`)).join("")
+        : '<p class="empty">Salva un viaggio dai risultati con ☆ per ritrovarlo qui con un tocco.</p>';
+    } else if (tab === "fav") {
+      body = row('data-f="home"', ICONS.HOME, "Casa", f.home ? prettyName(f.home.name) : "Tocca per impostarla", f.home ? 'data-del-f="home"' : "") +
+        row('data-f="work"', ICONS.WORK, "Lavoro", f.work ? prettyName(f.work.name) : "Tocca per impostarlo", f.work ? 'data-del-f="work"' : "") +
+        f.list.map((x, i) => row(`data-f="${i}"`, ICONS.FAV, prettyName(x.name), x.sub, `data-del-f="${i}"`)).join("") +
+        (f.list.length ? "" : '<p class="empty small">Aggiungi altri luoghi con ☆ dal popup sulla mappa o dalla pagina di una fermata.</p>');
+    } else {
+      body = `<p class="small" style="margin:0 0 8px">Orari ufficiali GTFS di Autolinee Toscane, Trenitalia e tramvia tramite Transitous. Mappa e strade da OpenStreetMap, percorsi in auto e a piedi da OSRM (FOSSGIS).</p>
+        <p class="small muted" style="margin:0 0 8px">I bus AT non hanno dati in tempo reale: vedi gli orari programmati. I tempi in auto non tengono conto del traffico.</p>
+        <p class="small muted" style="margin:0 0 8px">Nessun account, nessuna pubblicità, nessun tracciamento. Cronologia, preferiti e viaggi salvati restano solo su questo telefono.</p>
+        ${CFG.contact ? `<p class="small muted" style="margin:0">Progetto e contatti: <a href="${esc(CFG.contact)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(CFG.contact.replace(/^https?:\/\//, ""))}</a></p>` : ""}`;
+    }
+    const tabs = `<div class="tabs" role="tablist" aria-label="Sezioni">${TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === tab}" data-tab="${k}">${l}</button>`).join("")}</div>`;
+    view("Dove vuoi andare?", tabs + `<div class="tabpanel" role="tabpanel">${body}</div>`, { root: true, level: state.viewKind === "home" ? null : 0, kind: "home", bind: (root) => {
+      root.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => homeView(b.dataset.tab));
       root.querySelectorAll("[data-r]").forEach((b) => b.onclick = () => {
-        const r = rec[+b.dataset.r];
+        const r = { ...rec[+b.dataset.r], name: prettyName(rec[+b.dataset.r].name) };
         if (r.type === "STOP" && r.id && !state.from) { showDepartures(r); return; }
-        setPlace(state.from ? "to" : "from", { ...r });
+        setPlace(state.from ? "to" : "from", r);
+      });
+      const cr = root.querySelector("[data-clear-recent]"); if (cr) cr.onclick = () => { store("recent", []); homeView("recent"); };
+      root.querySelectorAll("[data-t]").forEach((b) => b.onclick = () => {
+        const t = tr[+b.dataset.t];
+        state.from = { ...t.from }; state.to = { ...t.to };
+        const mb = document.querySelector(`[data-mode="${t.mode}"]`);
+        syncInputs(); drawPins();
+        if (mb && state.mode !== t.mode) mb.click(); else search();
+      });
+      root.querySelectorAll("[data-del-t]").forEach((b) => b.onclick = () => { const l = trips(); l.splice(+b.dataset.delT, 1); store("trips", l); homeView("trips"); });
+      root.querySelectorAll("[data-f]").forEach((b) => b.onclick = () => {
+        const k = b.dataset.f, place = k === "home" || k === "work" ? f[k] : f.list[+k];
+        if (!place) { // imposta Casa o Lavoro cercando l'indirizzo
+          state.pickFor = k; const t = $("#to"); t.placeholder = k === "home" ? "Cerca l'indirizzo di Casa" : "Cerca l'indirizzo del Lavoro"; t.value = ""; t.focus(); return;
+        }
+        setPlace("to", { ...place });
+        if (!state.from) locate("from"); // parti da dove sei
+      });
+      root.querySelectorAll("[data-del-f]").forEach((b) => b.onclick = () => {
+        const k = b.dataset.delF, ff = favs();
+        if (k === "home" || k === "work") ff[k] = null; else ff.list.splice(+k, 1);
+        store("favs", ff); homeView("fav");
       });
     } });
   }
@@ -427,14 +530,7 @@
     const base = mode === "CAR" ? CFG.routingCar : CFG.routingFoot;
     try {
       const routes = await osrm(base, from, to, mode === "CAR");
-      const now = Date.now();
-      return routes.map((r) => ({
-        kind: "road", mode, duration: r.duration, distance: r.distance,
-        startTime: new Date(now).toISOString(), endTime: new Date(now + r.duration * 1000).toISOString(),
-        geometry: decodePolyline(r.geometry, 6),
-        via: r.legs && r.legs[0] && r.legs[0].summary,
-        steps: (r.legs || []).flatMap((l) => l.steps || []).map((s) => ({ text: osrmText(s, mode), distance: s.distance })).filter((s) => s.text)
-      }));
+      return routes.map((r) => osrmItem(r, mode));
     } catch (first) {
       // Riserva: stesso calcolo con Transitous
       const plan = await motis("plan", { fromPlace: placeParam(from), toPlace: placeParam(to), directModes: mode, maxDirectTime: 6 * 3600, numItineraries: 1, language: "it", time: new Date().toISOString() });
@@ -444,9 +540,31 @@
         const legs = it.legs || [];
         return { kind: "road", mode, duration: it.duration, distance: legs.reduce((a, l) => a + (l.distance || 0), 0), startTime: it.startTime, endTime: it.endTime,
           geometry: legs.flatMap((l) => decodePolyline(l.legGeometry.points, l.legGeometry.precision)),
-          steps: legs.flatMap((l) => (l.steps || []).map((s) => ({ text: motisStepText(s), distance: s.distance }))) };
+          steps: legs.flatMap((l) => motisSteps(l.steps)) };
       });
     }
+  }
+
+  function osrmItem(r, mode) {
+    const now = Date.now();
+    return {
+      kind: "road", mode, duration: r.duration, distance: r.distance,
+      startTime: new Date(now).toISOString(), endTime: new Date(now + r.duration * 1000).toISOString(),
+      geometry: decodePolyline(r.geometry, 6),
+      via: r.legs && r.legs[0] && r.legs[0].summary,
+      steps: (r.legs || []).flatMap((l) => l.steps || []).map((s) => {
+        const m = s.maneuver || {};
+        return { text: osrmText(s, mode), distance: s.distance, loc: m.location ? [m.location[1], m.location[0]] : null, type: m.type, mod: m.modifier, exit: m.exit };
+      }).filter((s) => s.text)
+    };
+  }
+  // Passi a piedi di Transitous: testo, posizione e tipo di svolta
+  const MMOD = { HARD_LEFT: "sharp left", LEFT: "left", SLIGHTLY_LEFT: "slight left", CONTINUE: "straight", SLIGHTLY_RIGHT: "slight right", RIGHT: "right", HARD_RIGHT: "sharp right", UTURN_LEFT: "uturn", UTURN_RIGHT: "uturn" };
+  function motisSteps(steps) {
+    return (steps || []).map((s, i) => {
+      const g = s.polyline ? decodePolyline(s.polyline.points, s.polyline.precision) : [];
+      return { text: motisStepText(s), distance: s.distance, loc: g[0] || null, type: i === 0 ? "depart" : (/CIRCLE/.test(s.relativeDirection) ? "roundabout" : "turn"), mod: MMOD[s.relativeDirection] || "straight" };
+    });
   }
 
   const DIR = { "left": "a sinistra", "right": "a destra", "slight left": "leggermente a sinistra", "slight right": "leggermente a destra", "sharp left": "decisamente a sinistra", "sharp right": "decisamente a destra", "straight": "dritto", "uturn": "inversione a U" };
@@ -455,7 +573,7 @@
     const on = name ? ` su ${name}` : "";
     switch (m.type) {
       case "depart": return `Parti${on}${mode === "WALK" ? " a piedi" : ""}`;
-      case "arrive": return "Sei arrivato a destinazione";
+      case "arrive": return "Arrivo a destinazione";
       case "roundabout": case "rotary": case "exit roundabout": case "exit rotary": return `Alla rotonda prendi la ${m.exit ? m.exit + "ª " : ""}uscita${name ? " verso " + name : ""}`;
       case "roundabout turn": return `Alla rotonda gira ${mod}${on}`;
       case "fork": return `Al bivio tieni ${mod || "la direzione"}${on}`;
@@ -515,13 +633,15 @@
         ? errorBox("Nessun collegamento con i mezzi in questo orario. Prova un altro orario, oppure scegli come partenza o arrivo una fermata vicina.")
         : errorBox("Nessun percorso trovato.");
     } else {
-      html = `<div class="list">${all.map(itinCard).join("")}</div>` +
+      html = `<div class="row" style="margin-bottom:8px"><button class="btn small" data-save-trip aria-pressed="${trips().some(sameTrip)}">${trips().some(sameTrip) ? "★ Viaggio salvato" : "☆ Salva viaggio"}</button></div><div class="list">${all.map(itinCard).join("")}</div>` +
         (P.mode === "TRANSIT" && state.nextCursor ? '<div style="margin-top:10px"><button class="btn wide" data-more>Mostra partenze successive</button></div>' : "");
     }
     view(P.mode === "TRANSIT" ? "Verso " + state.to.name : title, html, { root: true, level: 1,
       draw: () => { routeLayer.clearLayers(); if (all[0]) drawItin(all[0], true); },
       bind: (root) => {
         root.querySelectorAll("[data-it]").forEach((b) => b.onclick = () => showItin(all[+b.dataset.it]));
+        const sv = root.querySelector("[data-save-trip]");
+        if (sv) sv.onclick = () => { const on = toggleTrip(); sv.textContent = on ? "★ Viaggio salvato" : "☆ Salva viaggio"; sv.setAttribute("aria-pressed", String(on)); };
         const more = root.querySelector("[data-more]"); if (more) more.onclick = () => { more.disabled = true; more.textContent = "Carico…"; search(state.nextCursor); };
       } });
   }
@@ -557,13 +677,15 @@
     let html = "";
     if (it.kind === "road") {
       html = `<div class="meta" style="margin-bottom:8px"><span><b>${fmtDur(it.duration)}</b></span><span>${fmtDist(it.distance)}</span>${it.mode === "CAR" ? "<span>tempo senza traffico</span>" : ""}</div>
-        <ol class="steps">${it.steps.map((s) => `<li><span>${esc(s.text)}</span><span>${s.distance >= 10 ? fmtDist(s.distance) : ""}</span></li>`).join("")}</ol>
-        ${externalNav()}`;
-      view(it.mode === "CAR" ? "In auto · " + fmtDur(it.duration) : "A piedi · " + fmtDur(it.duration), html, { push: true, level: 1, draw: () => drawItin(it) });
+        <button class="btn primary wide" data-nav style="margin:4px 0 12px">Avvia navigazione</button>
+        <ol class="steps">${it.steps.map((s) => `<li><span>${esc(s.text)}</span><span>${s.distance >= 10 ? fmtDist(s.distance) : ""}</span></li>`).join("")}</ol>`;
+      view(it.mode === "CAR" ? "In auto · " + fmtDur(it.duration) : "A piedi · " + fmtDur(it.duration), html, { push: true, level: 1, draw: () => drawItin(it), bind: (root) => {
+        root.querySelector("[data-nav]").onclick = () => startRoadNav(it);
+      } });
       return;
     }
     const legs = it.legs || [];
-    html += '<div class="tl">';
+    html += '<button class="btn primary wide" data-follow style="margin:4px 0 12px">Segui il viaggio</button><div class="tl">';
     legs.forEach((l, i) => {
       const isT = l.mode !== "WALK" && l.mode !== "CAR";
       const col = isT ? (l.routeColor ? "#" + l.routeColor : "var(--transit)") : "var(--walk)";
@@ -573,7 +695,7 @@
       html += `<div class="seg" style="--c:${col}"><div></div><div class="bar ${isT ? "" : "dash"}"></div><div class="body">`;
       if (!isT) {
         html += `<div class="muted">${ICONS.WALK.replace("<svg", '<svg width="16" height="16" style="vertical-align:-3px"')} A piedi ${fmtDur(l.duration)}${l.distance ? " · " + fmtDist(l.distance) : ""}</div>`;
-        const st = (l.steps || []).map((s) => ({ text: motisStepText(s), distance: s.distance })).filter((s) => s.distance > 5);
+        const st = motisSteps(l.steps).filter((s) => s.distance > 5);
         if (st.length > 1) html += `<details><summary>Indicazioni</summary><ol class="steps">${st.map((s) => `<li><span>${esc(s.text)}</span><span>${fmtDist(s.distance)}</span></li>`).join("")}</ol></details>`;
       } else {
         const inter = l.intermediateStops || [];
@@ -588,14 +710,9 @@
     html += "</div>";
     view(`${fmtTime(it.startTime)} – ${fmtTime(it.endTime)} · ${fmtDur(it.duration)}`, html, { push: true, level: 1, draw: () => drawItin(it), bind: (root) => {
       root.querySelectorAll("[data-trip]").forEach((b) => b.onclick = () => { const l = legs[+b.dataset.trip]; showTrip(l.tripId, l.from.stopId); });
+      root.querySelector("[data-follow]").onclick = () => startTripNav(it);
     } });
   }
-  function externalNav() {
-    if (!state.to) return "";
-    const geo = `geo:${state.to.lat},${state.to.lon}?q=${state.to.lat},${state.to.lon}`;
-    return `<div class="label">Navigazione vocale</div><p class="small muted" style="margin:0 0 8px">Per la guida passo passo con la voce puoi aprire la destinazione in un'app di navigazione installata, ad esempio Organic Maps o OsmAnd.</p><a class="btn" href="${esc(geo)}">Apri in un'app di navigazione</a>`;
-  }
-
   // ---------- Corsa intera (tutte le fermate della linea) ----------
   async function showTrip(tripId, highlightStopId) {
     pushCurrent();
@@ -636,7 +753,7 @@
       const r = await motis("stoptimes", { stopId: stop.id, n: 25, time: new Date().toISOString(), language: "it" });
       const list = r.stopTimes || [];
       let lastDay = dayLabel(new Date(Date.now()).toISOString());
-      const html = `<div class="row" style="margin-bottom:6px"><button class="btn small primary" data-go="to">Portami qui</button><button class="btn small" data-go="from">Parti da qui</button></div>
+      const html = `<div class="row" style="margin-bottom:6px"><button class="btn small primary" data-go="to">Portami qui</button><button class="btn small" data-go="from">Parti da qui</button><button class="btn small" data-fav-stop>${isFav(stop) ? "★ Preferito" : "☆ Preferito"}</button></div>
         ${list.length ? list.map((s, i) => {
           const t = s.place.departure || s.place.arrival; const sch = s.place.scheduledDeparture || s.place.scheduledArrival;
           const day = dayLabel(t); const head = day !== lastDay ? `<div class="label">${esc(day)}</div>` : ""; lastDay = day;
@@ -650,12 +767,272 @@
         }).join("") : '<p class="empty">Nessuna partenza trovata da questa fermata.</p>'}`;
       view(stop.name, html, { level: 1, draw: () => { routeLayer.clearLayers(); L.circleMarker([stop.lat, stop.lon], { radius: 8, color: cssVar("--surface"), weight: 3, fillColor: cssVar("--transit"), fillOpacity: 1 }).addTo(routeLayer); }, bind: (root) => {
         root.querySelectorAll("[data-go]").forEach((b) => b.onclick = () => setPlace(b.dataset.go, { ...stop, type: "STOP" }));
+        const fs = root.querySelector("[data-fav-stop]"); if (fs) fs.onclick = () => { fs.textContent = toggleFav({ ...stop, type: "STOP" }) ? "★ Preferito" : "☆ Preferito"; };
         root.querySelectorAll("[data-d]").forEach((b) => b.onclick = () => { const s = list[+b.dataset.d]; showTrip(s.tripId, stop.id); });
       } });
     } catch (e) {
       view(stop.name, errorBox(e.message), { level: 1, kind: "error" });
     }
   }
+
+  // ---------- Navigazione ----------
+  // Auto e piedi: segue il GPS, indicazione successiva, voce, ricalcolo se esci dal percorso.
+  // Mezzi: segue il viaggio tratta per tratta e avvisa quando scendere.
+  const RAD = Math.PI / 180, EARTH = 6371000;
+  function distM(a, b) { const la = (a[0] + b[0]) / 2 * RAD; const x = (b[1] - a[1]) * RAD * Math.cos(la), y = (b[0] - a[0]) * RAD; return Math.sqrt(x * x + y * y) * EARTH; }
+  function makeLine(pts) { const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + distM(pts[i - 1], pts[i])); return { pts, cum, len: cum[cum.length - 1] || 0 }; }
+  // Punto più vicino sulla linea: distanza dalla linea e metri percorsi lungo di essa
+  function projectOn(line, p, hint) {
+    const n = line.pts.length;
+    if (!n) return { dist: Infinity, along: 0, idx: 0 };
+    if (n === 1) return { dist: distM(p, line.pts[0]), along: 0, idx: 0 };
+    const kx = Math.cos(p[0] * RAD) * RAD * EARTH, ky = RAD * EARTH;
+    const scan = (from, to) => {
+      let best = { dist: Infinity, along: 0, idx: 0 };
+      for (let i = Math.max(0, from); i < Math.min(n - 1, to); i++) {
+        const a = line.pts[i], b = line.pts[i + 1];
+        const ax = (a[1] - p[1]) * kx, ay = (a[0] - p[0]) * ky, dx = (b[1] - a[1]) * kx, dy = (b[0] - a[0]) * ky, l2 = dx * dx + dy * dy;
+        const t = l2 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / l2)) : 0;
+        const cx = ax + t * dx, cy = ay + t * dy, d = Math.sqrt(cx * cx + cy * cy);
+        if (d < best.dist) best = { dist: d, along: line.cum[i] + t * (line.cum[i + 1] - line.cum[i]), idx: i };
+      }
+      return best;
+    };
+    if (hint != null) { const r = scan(hint - 30, hint + 300); if (r.dist < 40) return r; }
+    return scan(0, n - 1);
+  }
+  function spokenDist(d) {
+    if (d >= 950) { const km = Math.round(d / 100) / 10; return km === 1 ? "un chilometro" : `${String(km).replace(".", ",")} chilometri`; }
+    const m = d < 100 ? Math.max(10, Math.round(d / 10) * 10) : Math.round(d / 50) * 50;
+    return `${m} metri`;
+  }
+  const lowerFirst = (t) => t ? t.charAt(0).toLowerCase() + t.slice(1) : t;
+  const ROT = { "straight": 0, "slight right": 45, "right": 90, "sharp right": 135, "uturn": 180, "sharp left": -135, "left": -90, "slight left": -45 };
+  function arrowSvg(st) {
+    if (!st) return "";
+    if (st.type === "arrive") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 21V4M6 4h11l-2.5 4L17 12H6"/></svg>';
+    if (/roundabout|rotary/.test(st.type || "")) return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="10" r="4.5"/><path d="M12 21v-6.5M15.5 7l3-3M18.5 4v3.5M18.5 4H15"/></svg>';
+    if (st.mod === "uturn") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M16 21V9a4 4 0 00-8 0v4M4.5 10L8 13.5 11.5 10"/></svg>';
+    const r = ROT[st.mod] || 0;
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(${r} 12 12)"><path d="M12 21V5M6 11l6-6 6 6"/></g></svg>`;
+  }
+
+  // Funzioni del telefono: nell'app Android usa i componenti nativi, nel browser quelli web
+  function capPlugin(name) {
+    const C = window.Capacitor;
+    try { return C && C.isPluginAvailable && C.isPluginAvailable(name) ? ((C.Plugins && C.Plugins[name]) || (C.registerPlugin && C.registerPlugin(name))) : null; } catch (e) { return null; }
+  }
+  const NAV = { active: false, voice: store("voice") !== false };
+  function speak(text) {
+    NAV.lastSpoken = text;
+    if (!NAV.voice || !text) return;
+    const tts = capPlugin("TextToSpeech");
+    if (tts) { tts.speak({ text, lang: "it-IT", rate: 1.0, pitch: 1.0, volume: 1.0, category: "playback", queueStrategy: 0 }).catch(() => {}); return; }
+    try { const u = new SpeechSynthesisUtterance(text); u.lang = "it-IT"; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } catch (e) {}
+  }
+  function hush() { const tts = capPlugin("TextToSpeech"); if (tts) tts.stop().catch(() => {}); try { window.speechSynthesis.cancel(); } catch (e) {} }
+  function buzz(ms) { const h = capPlugin("Haptics"); if (h) { h.vibrate({ duration: ms }).catch(() => {}); return; } try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+  async function stayAwake(on) {
+    const k = capPlugin("KeepAwake");
+    try {
+      if (k) { await (on ? k.keepAwake() : k.allowSleep()); return; }
+      if (on && navigator.wakeLock) NAV.lock = await navigator.wakeLock.request("screen");
+      else if (!on && NAV.lock) { await NAV.lock.release(); NAV.lock = null; }
+    } catch (e) {}
+  }
+  // Mezzi: notifica all'orario di arrivo, utile col telefono in tasca (solo app Android)
+  async function scheduleAlerts(legs) {
+    const ln = capPlugin("LocalNotifications"); NAV.notifIds = [];
+    if (!ln) return;
+    try {
+      const perm = await ln.requestPermissions();
+      if (perm && perm.display && perm.display !== "granted") return;
+      const list = [];
+      legs.forEach((g, i) => {
+        if (!g.isT) return;
+        const at = new Date(new Date(g.l.endTime).getTime() - 120000);
+        if (at.getTime() < Date.now() + 30000) return;
+        list.push({ id: 7100 + i, title: "Prepara a scendere", body: `Alla prossima: ${g.l.to.name} (${lineName(g.l)})`, schedule: { at, allowWhileIdle: true } });
+      });
+      if (list.length) { await ln.schedule({ notifications: list }); NAV.notifIds = list.map((x) => ({ id: x.id })); }
+    } catch (e) {}
+  }
+  function cancelAlerts() { const ln = capPlugin("LocalNotifications"); if (ln && NAV.notifIds && NAV.notifIds.length) ln.cancel({ notifications: NAV.notifIds }).catch(() => {}); NAV.notifIds = []; }
+  const lineName = (l) => l.routeShortName || l.displayName || l.tripShortName || modeName(l.mode);
+
+  function banner(o) {
+    $("#navIcon").innerHTML = o.icon || "";
+    $("#navDist").textContent = o.dist || "";
+    $("#navInstr").textContent = o.text || "";
+    $("#navThen").textContent = o.then || "";
+    $("#nav").classList.toggle("transit", !!o.transit);
+  }
+  const summary = (t) => { $("#navSummary").textContent = t; };
+  function showMe(p) {
+    if (!meMarker) meMarker = L.marker(p, { icon: L.divIcon({ className: "", html: '<div class="me"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }), keyboard: false, zIndexOffset: 1000 }).addTo(map);
+    else meMarker.setLatLng(p);
+  }
+  function voiceBtn() { const b = $("#navVoice"); b.setAttribute("aria-pressed", String(NAV.voice)); b.innerHTML = NAV.voice ? VOICE_ON : VOICE_OFF; b.setAttribute("aria-label", NAV.voice ? "Voce attiva" : "Voce spenta"); }
+  const VOICE_ON = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 010 6M18.5 6.5a7.5 7.5 0 010 11"/></svg>';
+  const VOICE_OFF = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+
+  // Imposta il percorso da seguire (auto, piedi o tratta a piedi di un viaggio con i mezzi)
+  function setRoute(line, steps, duration, arriveText) {
+    NAV.line = line; NAV.duration = duration || 0; NAV.hint = 0; NAV.done = new Set(); NAV.off = 0;
+    NAV.steps = (steps || []).filter((x) => x.loc && x.type !== "arrive").map((x) => ({ ...x, at: x.type === "depart" ? 0 : projectOn(line, x.loc).along })).sort((a, b) => a.at - b.at);
+    NAV.steps.push({ text: arriveText || "Arrivo a destinazione", type: "arrive", at: line.len });
+  }
+  function drawNav(pts, color, dashed) {
+    routeLayer.clearLayers();
+    L.polyline(pts, { color: cssVar("--surface"), weight: 11, opacity: .9 }).addTo(routeLayer);
+    L.polyline(pts, { color, weight: 7, dashArray: dashed ? "2 10" : null, lineCap: "round" }).addTo(routeLayer);
+  }
+
+  function beginNav() {
+    NAV.active = true; NAV.arrived = false; NAV.follow = true;
+    document.body.classList.add("navigating"); $("#nav").hidden = false; $("#navBar").hidden = false; $("#navCenter").hidden = true;
+    voiceBtn(); hideSugg(); blurInputs(); map.closePopup(); stayAwake(true);
+    if (!navigator.geolocation) { toast("Questo dispositivo non fornisce la posizione."); return; }
+    NAV.watch = navigator.geolocation.watchPosition(onFix, (err) => {
+      if (err.code === 1) { toast("Serve il permesso di posizione per navigare."); stopNav(); }
+      else summary("In attesa del segnale GPS…");
+    }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
+  }
+  function stopNav() {
+    if (!NAV.active) return;
+    NAV.active = false;
+    if (NAV.watch != null && navigator.geolocation) navigator.geolocation.clearWatch(NAV.watch);
+    NAV.watch = null; hush(); cancelAlerts(); stayAwake(false);
+    document.body.classList.remove("navigating"); $("#nav").hidden = true; $("#navBar").hidden = true;
+    if (state.currentDraw) state.currentDraw();
+  }
+  function onFix(pos) {
+    if (!NAV.active) return;
+    const p = [pos.coords.latitude, pos.coords.longitude], acc = pos.coords.accuracy || 0;
+    NAV.pos = p; showMe(p);
+    if (NAV.follow) map.setView(p, NAV.kind === "road" && NAV.mode === "CAR" ? 17 : 18, { animate: true });
+    if (NAV.arrived) return;
+    if (NAV.kind === "road") { const r = guide(p, acc, NAV.mode, true); if (r === "arrived") arrived(); }
+    else tripUpdate(p, acc);
+  }
+
+  // Auto e piedi: avanzamento, annunci, uscita dal percorso
+  function guide(p, acc, mode, allowReroute) {
+    const pr = projectOn(NAV.line, p, NAV.hint); NAV.hint = pr.idx;
+    NAV.off = pr.dist > (mode === "CAR" ? 45 : 30) && acc <= 50 ? NAV.off + 1 : 0;
+    if (allowReroute && NAV.off >= 3) { if (Date.now() - (NAV.lastReroute || 0) > 15000) reroute(p); return "reroute"; }
+    const remain = Math.max(0, NAV.line.len - pr.along);
+    if (remain < (mode === "CAR" ? 35 : 20)) return "arrived";
+    const k = NAV.steps.findIndex((x) => x.at > pr.along + 3 && x.type !== "depart");
+    const next = NAV.steps[k < 0 ? NAV.steps.length - 1 : k], key = k < 0 ? NAV.steps.length - 1 : k;
+    const d = Math.max(0, next.at - pr.along), after = NAV.steps[key + 1];
+    banner({ icon: arrowSvg(next), dist: fmtDist(d), text: next.text, then: after && after.at - next.at < 150 ? "Poi: " + lowerFirst(after.text) : "" });
+    const ths = mode === "CAR" ? [1000, 400, 120, 25] : [70, 15];
+    const th = ths.filter((t) => d <= t).pop();
+    if (th != null && !NAV.done.has(key + ":" + th)) {
+      ths.filter((t) => t >= th).forEach((t) => NAV.done.add(key + ":" + t));
+      const last = th === ths[ths.length - 1];
+      speak(last ? next.text : `Tra ${spokenDist(d)}, ${lowerFirst(next.text)}`);
+    }
+    if (NAV.kind === "road") {
+      const left = NAV.line.len ? NAV.duration * remain / NAV.line.len : 0;
+      summary(`${fmtDur(left)} · ${fmtDist(remain)} · arrivo ${fmtTime(new Date(Date.now() + left * 1000).toISOString())}`);
+    }
+    return "ok";
+  }
+  async function reroute(p) {
+    NAV.lastReroute = Date.now(); NAV.off = 0;
+    speak("Ricalcolo il percorso"); banner({ icon: "", dist: "", text: "Ricalcolo il percorso…" });
+    try {
+      const routes = await osrm(NAV.mode === "CAR" ? CFG.routingCar : CFG.routingFoot, { lat: p[0], lon: p[1] }, NAV.dest, false);
+      if (!NAV.active) return;
+      const it = osrmItem(routes[0], NAV.mode);
+      setRoute(makeLine(it.geometry), it.steps, it.duration);
+      drawNav(it.geometry, NAV.mode === "CAR" ? cssVar("--car") : cssVar("--walk"), NAV.mode === "WALK");
+    } catch (e) { toast("Ricalcolo non riuscito: " + e.message); }
+  }
+  function arrived() {
+    NAV.arrived = true;
+    banner({ icon: arrowSvg({ type: "arrive" }), dist: "", text: "Sei arrivato" + (NAV.dest ? ": " + NAV.dest.name : "") });
+    summary("Buon proseguimento!");
+    speak("Sei arrivato a destinazione"); buzz(400);
+  }
+
+  function startRoadNav(it) {
+    NAV.kind = "road"; NAV.mode = it.mode; NAV.dest = state.to; NAV.lastReroute = 0;
+    setRoute(makeLine(it.geometry), it.steps, it.duration);
+    drawNav(it.geometry, it.mode === "CAR" ? cssVar("--car") : cssVar("--walk"), it.mode === "WALK");
+    const first = NAV.steps.find((x) => x.type !== "depart") || NAV.steps[0];
+    banner({ icon: arrowSvg(first), dist: fmtDist(first.at), text: first.text });
+    summary("In attesa del segnale GPS…");
+    beginNav();
+    speak((NAV.steps[0] && NAV.steps[0].type === "depart" ? NAV.steps[0].text + ". " : "") + "Navigazione avviata");
+  }
+
+  // Mezzi: segue il viaggio tratta per tratta
+  function startTripNav(it) {
+    NAV.kind = "trip"; NAV.mode = "WALK"; NAV.dest = state.to; NAV.endTime = it.endTime;
+    NAV.legs = (it.legs || []).map((l) => {
+      let pts = decodePolyline(l.legGeometry && l.legGeometry.points, l.legGeometry && l.legGeometry.precision);
+      if (pts.length < 2) pts = [[l.from.lat, l.from.lon], [l.to.lat, l.to.lon]];
+      const line = makeLine(pts), isT = l.mode !== "WALK" && l.mode !== "CAR";
+      const g = { l, isT, line, pts };
+      if (isT) g.stops = [l.from, ...(l.intermediateStops || []), l.to].map((x) => ({ name: x.name, time: x.arrival || x.departure, at: projectOn(line, [x.lat, x.lon]).along }));
+      else g.steps = motisSteps(l.steps);
+      return g;
+    });
+    if (!NAV.legs.length) return;
+    drawItin(it);
+    beginNav();
+    enterLeg(0);
+    scheduleAlerts(NAV.legs);
+  }
+  function enterLeg(i) {
+    NAV.li = i; const g = NAV.legs[i];
+    summary(`Tratta ${i + 1} di ${NAV.legs.length} · arrivo ${fmtTime(NAV.endTime)}`);
+    if (!g.isT) {
+      const next = NAV.legs[i + 1];
+      setRoute(g.line, g.steps, g.l.duration, next && next.isT ? `Arrivo alla fermata ${next.l.from.name}` : "Arrivo a destinazione");
+      const goal = next && next.isT ? `Vai a piedi alla fermata ${next.l.from.name}` : "Prosegui a piedi verso la destinazione";
+      banner({ icon: ICONS.WALK, dist: fmtDist(g.line.len), text: goal });
+      speak(goal + (next && next.isT ? `. ${lineName(next.l)} alle ${fmtTime(next.l.startTime)}` : ""));
+    } else {
+      NAV.line = g.line; NAV.hint = 0; NAV.done = new Set();
+      const msg = `Prendi ${lineName(g.l)} direzione ${g.l.headsign || g.l.to.name} alle ${fmtTime(g.l.startTime)}`;
+      banner({ icon: legChip(g.l), dist: fmtTime(g.l.startTime), text: msg, then: `Fermata ${g.l.from.name}`, transit: true });
+      speak(msg);
+    }
+  }
+  function tripUpdate(p, acc) {
+    const g = NAV.legs[NAV.li], last = NAV.li === NAV.legs.length - 1;
+    if (!g.isT) {
+      const r = guide(p, acc, "WALK", false);
+      if (r === "arrived") { if (last) arrived(); else enterLeg(NAV.li + 1); }
+      return;
+    }
+    const pr = projectOn(g.line, p, NAV.hint); NAV.hint = pr.idx;
+    const stops = g.stops, endAt = stops[stops.length - 1].at, alight = stops[stops.length - 1];
+    const toEnd = Math.max(0, endAt - pr.along);
+    const boarded = NAV.done.has("on") || (pr.along > 120 && pr.dist < 150);
+    if (!boarded) {
+      banner({ icon: legChip(g.l), dist: fmtTime(g.l.startTime), text: `Aspetta ${lineName(g.l)} → ${g.l.headsign || g.l.to.name}`, then: `Fermata ${g.l.from.name}`, transit: true });
+      return;
+    }
+    NAV.done.add("on");
+    const ni = stops.findIndex((x, k) => k > 0 && x.at > pr.along + 40);
+    const nextStop = stops[ni < 0 ? stops.length - 1 : ni];
+    const left = ni < 0 ? 0 : stops.length - ni;
+    banner({ icon: legChip(g.l), dist: left > 1 ? `${left} fermate` : (left === 1 ? "Prossima" : "Ora"), text: `Scendi a ${alight.name}`, then: `Prossima: ${nextStop.name} · arrivo ${fmtTime(alight.time)}`, transit: true });
+    if (left <= 1 && !NAV.done.has("prep")) { NAV.done.add("prep"); speak(`Alla prossima fermata scendi: ${alight.name}`); buzz(500); }
+    if (toEnd < 250 && !NAV.done.has("now")) { NAV.done.add("now"); speak(`Scendi ora: ${alight.name}`); buzz(1200); }
+    if (toEnd < 60) { if (last) arrived(); else enterLeg(NAV.li + 1); }
+  }
+
+  // Comandi della navigazione
+  $("#navStop").onclick = stopNav;
+  $("#navVoice").onclick = () => { NAV.voice = !NAV.voice; store("voice", NAV.voice); if (!NAV.voice) hush(); voiceBtn(); };
+  $("#navCenter").onclick = () => { NAV.follow = true; $("#navCenter").hidden = true; if (NAV.pos) map.setView(NAV.pos, 17); };
+  map.on("dragstart", () => { if (NAV.active) { NAV.follow = false; $("#navCenter").hidden = false; } });
 
   // ---------- Avvio ----------
   const savedMode = store("mode");
@@ -669,6 +1046,7 @@
   const capApp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
   if (capApp && capApp.addListener) {
     capApp.addListener("backButton", () => {
+      if (NAV.active) { stopNav(); return; }
       if (!$("#sugg").hidden) { hideSugg(); blurInputs(); return; }
       if (map._popup && map.hasLayer(map._popup)) { map.closePopup(); return; }
       if (!$("#back").hidden) { $("#back").click(); return; }
@@ -678,5 +1056,5 @@
   }
 
   // Per i test
-  window.__girovia = { map, prettyName, decodePolyline, osrmText, fmtDur, fmtDist, state, showResults, showItin, view };
+  window.__girovia = { map, NAV, projectOn, makeLine, spokenDist, prettyName, decodePolyline, osrmText, fmtDur, fmtDist, state, showResults, showItin, view };
 })();

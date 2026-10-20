@@ -61,7 +61,7 @@ test("funzioni di base: polilinee, durate, indicazioni", async ({ page }) => {
     return {
       poly: g.decodePolyline("_p~iF~ps|U_ulLnnqC_mqNvxq`@", 5),
       empty: g.decodePolyline("", 6),
-      names: ["SCALA SANTA MARIA NOVELLA", "FIRENZE S.MARIA NOVELLA", "SANT'ELLERO", "PONTASSIEVE SS67", "BORGO SAN LORENZO VIA DEL CARMINE", "CAMPO MARTE FS", "Firenze Rifredi", "LE SIECI PIAZZA ALBIZI", "VIA DE' CALZAIUOLI", "A"].map(g.prettyName),
+      names: ["SCALA SANTA MARIA NOVELLA", "FIRENZE S.MARIA NOVELLA", "SANT'ELLERO", "PONTASSIEVE SS67", "BORGO SAN LORENZO VIA DEL CARMINE", "CAMPO MARTE FS", "Firenze Rifredi", "LE SIECI PIAZZA ALBIZI", "VIA DE' CALZAIUOLI", "A", "BORGO SAN LORENZO Via Gaiani", "FIRENZE Stazione SMN", "Via Roma"].map(g.prettyName),
       dur: [g.fmtDur(30), g.fmtDur(600), g.fmtDur(3600), g.fmtDur(5400)],
       dist: [g.fmtDist(123), g.fmtDist(1500), g.fmtDist(23456)],
       txt: [
@@ -74,10 +74,10 @@ test("funzioni di base: polilinee, durate, indicazioni", async ({ page }) => {
   });
   expect(r.poly).toEqual([[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]]);
   expect(r.empty).toEqual([]);
-  expect(r.names).toEqual(["Scala Santa Maria Novella", "Firenze S.Maria Novella", "Sant'Ellero", "Pontassieve SS67", "Borgo San Lorenzo Via del Carmine", "Campo Marte FS", "Firenze Rifredi", "Le Sieci Piazza Albizi", "Via de' Calzaiuoli", "A"]);
+  expect(r.names).toEqual(["Scala Santa Maria Novella", "Firenze S.Maria Novella", "Sant'Ellero", "Pontassieve SS67", "Borgo San Lorenzo Via del Carmine", "Campo Marte FS", "Firenze Rifredi", "Le Sieci Piazza Albizi", "Via de' Calzaiuoli", "A", "Borgo San Lorenzo Via Gaiani", "Firenze Stazione SMN", "Via Roma"]);
   expect(r.dur).toEqual(["1 min", "10 min", "1 h", "1 h 30 min"]);
   expect(r.dist).toEqual(["120 m", "1,5 km", "23 km"]);
-  expect(r.txt).toEqual(["Gira a sinistra su Via Roma", "Alla rotonda prendi la 3ª uscita", "Sei arrivato a destinazione", ""]);
+  expect(r.txt).toEqual(["Gira a sinistra su Via Roma", "Alla rotonda prendi la 3ª uscita", "Arrivo a destinazione", ""]);
 });
 
 test("fermata: partenze, corsa intera e tasto indietro", async ({ page }) => {

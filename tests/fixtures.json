@@ -405,7 +405,11 @@
       "steps": [
        {
         "maneuver": {
-         "type": "depart"
+         "type": "depart",
+         "location": [
+          11.248,
+          43.7764
+         ]
         },
         "name": "Via Nazionale",
         "distance": 300
@@ -413,7 +417,11 @@
        {
         "maneuver": {
          "type": "turn",
-         "modifier": "right"
+         "modifier": "right",
+         "location": [
+          11.3,
+          43.79
+         ]
         },
         "name": "Viale Spartaco Lavagnini",
         "distance": 1200
@@ -421,14 +429,22 @@
        {
         "maneuver": {
          "type": "roundabout",
-         "exit": 2
+         "exit": 2,
+         "location": [
+          11.33,
+          43.775
+         ]
         },
         "name": "SS67",
         "distance": 17000
        },
        {
         "maneuver": {
-         "type": "arrive"
+         "type": "arrive",
+         "location": [
+          11.433,
+          43.7745
+         ]
         },
         "name": "",
         "distance": 0

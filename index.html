@@ -174,6 +174,34 @@ details summary::-webkit-details-marker{display:none}
 .me{width:16px;height:16px;border-radius:50%;background:#2a7bff;border:3px solid #fff;box-shadow:0 0 0 6px rgba(42,123,255,.25)}
 .popbtns{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--sheet-h) + 90px);z-index:40;background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:12px;max-width:90vw;font-size:14px}
+
+/* Schede della schermata iniziale */
+.tabs{display:flex;gap:4px;background:var(--surface-2);border-radius:12px;padding:3px;margin:0 0 8px}
+.tabs button{flex:1;border:0;background:none;border-radius:9px;height:34px;font-weight:700;color:var(--muted);font-size:14px;white-space:nowrap}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.rowitem{display:flex;align-items:center;gap:4px;border-bottom:1px solid var(--line)}
+.rowitem .recent{border-bottom:0;flex:1;min-width:0}
+.iconbtn{flex:0 0 40px;height:40px;border:0;background:none;border-radius:10px;color:var(--muted);display:grid;place-items:center}
+
+/* Navigazione */
+body.navigating #top,body.navigating #sheet,body.navigating #locate{display:none}
+body.navigating .leaflet-bottom{bottom:calc(env(safe-area-inset-bottom,0px) + 96px)}
+#nav{position:fixed;z-index:30;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 10px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px))}
+.navcard{max-width:560px;margin:0 auto;background:var(--accent);color:var(--accent-fg);border-radius:18px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:var(--shadow)}
+#navIcon{flex:0 0 auto;min-width:52px;display:grid;place-items:center}
+#navIcon svg{width:48px;height:48px}
+#navIcon .chip{font-size:20px;padding:4px 10px}
+#navIcon .chip svg{width:18px;height:18px}
+.navtext{min-width:0}
+#navDist{font:700 30px/1.05 var(--f-sign);font-variant-numeric:tabular-nums}
+#navInstr{font:700 18px/1.25 var(--f-body);text-wrap:balance}
+#navThen{opacity:.85;margin-top:3px}
+#navThen:empty{display:none}
+#navBar{position:fixed;z-index:30;left:0;right:0;bottom:0;background:var(--surface);box-shadow:0 -6px 24px rgba(20,32,43,.16);border-radius:20px 20px 0 0;padding:12px max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 12px) max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px}
+#navSummary{flex:1;min-width:0;font:600 18px/1.2 var(--f-sign);font-variant-numeric:tabular-nums}
+.navbtns{display:flex;gap:8px;align-items:center}
+.navbtns button{height:44px;min-width:44px;border:0;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;font-weight:700}
+#navStop{background:var(--bad);color:#fff;padding:0 16px}
 </style>
 </head>
 <body>
@@ -215,6 +243,16 @@ details summary::-webkit-details-marker{display:none}
   <div id="sheetBody"></div>
 </section>
 
+
+<div id="nav" hidden><div class="navcard" role="status" aria-live="polite"><div id="navIcon"></div><div class="navtext"><div id="navDist"></div><div id="navInstr"></div><div id="navThen" class="small"></div></div></div></div>
+<div id="navBar" hidden>
+  <div id="navSummary"></div>
+  <div class="navbtns">
+    <button type="button" id="navCenter" aria-label="Torna alla mia posizione" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+    <button type="button" id="navVoice" aria-label="Voce"></button>
+    <button type="button" id="navStop">Fine</button>
+  </div>
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
