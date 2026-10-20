@@ -16,8 +16,8 @@ jobs:
     name: Codice e interfaccia
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -45,8 +45,8 @@ jobs:
       contents: write # per salvare rapporto e screenshot nel ramo "risultati-test"
     continue-on-error: true # un servizio esterno lento non deve bloccare le modifiche
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
