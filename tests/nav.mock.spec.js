@@ -7,6 +7,7 @@ const path = require("path");
 const FX = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures.json"), "utf8"));
 const LEAFLET = path.join(__dirname, "..", "node_modules", "leaflet", "dist");
 const NOW = "2026-10-21T06:30:00Z";
+const TILE_PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 const FI = [43.7764, 11.2480], TURN = [43.79, 11.30], MID = [43.775, 11.33], PON = [43.7745, 11.4330];
 const SMN_BUS = [43.7770, 11.2475], CDM = [43.776, 11.28], SIECI = [43.78, 11.39];
 const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
@@ -27,7 +28,7 @@ async function setup(page, context) {
     if (u.startsWith("http://127.0.0.1")) return route.continue();
     if (u.includes("leaflet.min.js")) return route.fulfill({ path: path.join(LEAFLET, "leaflet.js"), contentType: "application/javascript" });
     if (u.includes("leaflet.min.css")) return route.fulfill({ path: path.join(LEAFLET, "leaflet.css"), contentType: "text/css" });
-    if (u.includes("tile.openstreetmap") || u.includes("fonts.")) return route.fulfill({ status: 204, body: "" });
+    if (/tile\.openstreetmap|cartocdn/.test(u)) return route.fulfill({ body: TILE_PNG, contentType: "image/png", headers: { "access-control-allow-origin": "*" } });
     calls.push(u);
     if (u.includes("/reverse-geocode")) return route.fulfill({ json: [] });
     if (u.includes("/geocode")) return route.fulfill({ json: decodeURIComponent(u).includes("Firenze") ? FX.geo : FX.geo2 });

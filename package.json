@@ -5,8 +5,8 @@
   "description": "Mezzi pubblici, auto e piedi per Firenze e la Toscana",
   "license": "MIT",
   "scripts": {
-    "lint": "eslint . && html-validate index.html",
-    "test": "playwright test --project=mock",
+    "lint": "eslint . && html-validate index.html privacy.html",
+    "test": "playwright test --project=mock --project=offline",
     "test:live": "node tests/live-api.mjs && playwright test --project=live",
     "serve": "http-server -p 4173 -s -c-1 ."
   },
@@ -20,6 +20,8 @@
     "@capacitor/haptics": "8.0.2",
     "@capacitor/local-notifications": "8.3.1",
     "@eslint/js": "9.17.0",
+    "@fontsource/atkinson-hyperlegible": "^5.3.0",
+    "@fontsource/barlow-condensed": "^5.3.0",
     "@playwright/test": "1.56.1",
     "eslint": "9.17.0",
     "globals": "15.14.0",

@@ -15,7 +15,8 @@ module.exports = defineConfig({
   },
   webServer: { command: "npx http-server -p 4173 -c-1 -s .", url: "http://127.0.0.1:4173/index.html", reuseExistingServer: true },
   projects: [
-    { name: "mock", testMatch: /mock\.spec\.js/ },
+    { name: "mock", testMatch: /mock\.spec\.js/, use: { serviceWorkers: "block" } },
+    { name: "offline", testMatch: /offline\.spec\.js/ },
     { name: "live", testMatch: /live\.spec\.js/, timeout: 120000 }
   ]
 });

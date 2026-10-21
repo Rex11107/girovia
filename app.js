@@ -104,6 +104,22 @@
   }
 
   // ---------- Accesso ai servizi ----------
+  // Ogni richiesta ha un tempo massimo; si può anche annullare dall'esterno (nuova ricerca, uscita dalla vista).
+  const TIMEOUT_MS = CFG.timeoutMs || 15000;
+  class NetError extends Error { constructor(msg, kind) { super(msg); this.kind = kind; } }
+  async function fetchT(url, signal, ms) {
+    const ctl = new AbortController();
+    const onAbort = () => ctl.abort();
+    if (signal) { if (signal.aborted) ctl.abort(); else signal.addEventListener("abort", onAbort, { once: true }); }
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; ctl.abort(); }, ms || TIMEOUT_MS);
+    try { return await fetch(url, { signal: ctl.signal, referrerPolicy: "origin" }); }
+    catch (e) {
+      if (timedOut) throw new NetError("Il servizio non risponde: la rete è lenta o assente. Riprova tra poco.", "timeout");
+      if (e.name === "AbortError") throw e;
+      throw new NetError(navigator.onLine === false ? "Sei offline: orari e percorsi tornano quando c'è rete." : "Servizio non raggiungibile. Controlla la connessione.", "offline");
+    } finally { clearTimeout(timer); if (signal) signal.removeEventListener("abort", onAbort); }
+  }
   // Transitous (MOTIS 2) ha più versioni delle API: si prova dalla più recente.
   const VERSIONS = { "plan": [6, 5, 4, 3, 2], "trip": [6, 5, 4, 2], "stoptimes": [6, 5, 4, 1], "map/stops": [6, 1], "geocode": [1], "reverse-geocode": [1] };
   const knownVersion = {};
@@ -114,9 +130,7 @@
     let lastErr;
     for (const v of list) {
       const url = `${CFG.transitous}/api/v${v}/${endpoint}?${qs}`;
-      let res;
-      try { res = await fetch(url, { signal, referrerPolicy: "origin" }); }
-      catch (e) { if (e.name === "AbortError") throw e; lastErr = new Error("Servizio orari non raggiungibile. Controlla la connessione."); break; }
+      const res = await fetchT(url, signal);
       if (res.status === 404 && !knownVersion[endpoint]) { lastErr = new Error("Versione API non trovata"); continue; }
       if (!res.ok) {
         let t = ""; try { t = await res.text(); } catch (e) {}
@@ -129,9 +143,9 @@
     throw lastErr || new Error("Servizio orari non disponibile.");
   }
 
-  async function osrm(base, from, to, alternatives) {
+  async function osrm(base, from, to, alternatives, signal) {
     const url = `${base}/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=polyline6&steps=true&alternatives=${alternatives ? "true" : "false"}`;
-    const res = await fetch(url, { referrerPolicy: "origin" });
+    const res = await fetchT(url, signal);
     if (!res.ok) throw new Error("Servizio percorsi non raggiungibile (" + res.status + ").");
     const j = await res.json();
     if (j.code !== "Ok" || !j.routes || !j.routes.length) throw new Error("Nessun percorso trovato tra questi due punti.");
@@ -140,10 +154,26 @@
 
   // ---------- Mappa ----------
   const map = L.map("map", { zoomControl: false, attributionControl: true }).setView(CFG.center || [43.7731, 11.256], CFG.zoom || 12);
-  L.tileLayer(CFG.tiles, {
-    maxZoom: 19,
-    attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · Orari <a href="https://transitous.org/sources/" target="_blank" rel="noopener">Transitous e fonti</a> · Strade <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS</a>'
-  }).addTo(map);
+  // Tile: fornitori in ordine di preferenza (config.js); se uno smette di rispondere si passa al successivo
+  const DATA_ATTR = ' · Orari <a href="https://transitous.org/sources/" target="_blank" rel="noopener">Transitous e fonti</a> · Strade <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS</a>';
+  const PROVIDERS = Array.isArray(CFG.tileProviders) && CFG.tileProviders.length ? CFG.tileProviders
+    : [{ name: "OpenStreetMap", url: CFG.tiles || "https://tile.openstreetmap.org/{z}/{x}/{y}.png", maxZoom: 19, attribution: "© OpenStreetMap" }];
+  let tileLayer = null, tileIdx = 0, tileErrors = 0, tileOk = 0;
+  function useProvider(i) {
+    tileIdx = i; tileErrors = 0; tileOk = 0;
+    const p = PROVIDERS[i];
+    if (tileLayer) map.removeLayer(tileLayer);
+    tileLayer = L.tileLayer(p.url, { maxZoom: p.maxZoom || 19, subdomains: p.subdomains || "abc", crossOrigin: "anonymous", attribution: (p.attribution || "") + DATA_ATTR }).addTo(map);
+    tileLayer.on("tileload", () => { tileOk++; });
+    tileLayer.on("tileerror", () => {
+      tileErrors++;
+      // Molti errori e nessuna tile riuscita: il fornitore non risponde (offline escluso)
+      if (navigator.onLine !== false && tileErrors >= 8 && tileOk < 2 && tileIdx + 1 < PROVIDERS.length) {
+        useProvider(tileIdx + 1); toast("Mappa: uso " + PROVIDERS[tileIdx].name);
+      }
+    });
+  }
+  useProvider(0);
   map.attributionControl.setPrefix(false);
   const routeLayer = L.layerGroup().addTo(map);
   const stopsLayer = L.layerGroup().addTo(map);
@@ -454,6 +484,7 @@
       body = `<p class="small" style="margin:0 0 8px">Orari ufficiali GTFS di Autolinee Toscane, Trenitalia e tramvia tramite Transitous. Mappa e strade da OpenStreetMap, percorsi in auto e a piedi da OSRM (FOSSGIS).</p>
         <p class="small muted" style="margin:0 0 8px">I bus AT non hanno dati in tempo reale: vedi gli orari programmati. I tempi in auto non tengono conto del traffico.</p>
         <p class="small muted" style="margin:0 0 8px">Nessun account, nessuna pubblicità, nessun tracciamento. Cronologia, preferiti e viaggi salvati restano solo su questo telefono.</p>
+        <p class="small" style="margin:0 0 8px"><a href="privacy.html" style="color:var(--accent);font-weight:700">Privacy: quali dati usa Girovia e a chi li invia</a></p>
         ${CFG.contact ? `<p class="small muted" style="margin:0">Progetto e contatti: <a href="${esc(CFG.contact)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(CFG.contact.replace(/^https?:\/\//, ""))}</a></p>` : ""}`;
     }
     const tabs = `<div class="tabs" role="tablist" aria-label="Sezioni">${TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === tab}" data-tab="${k}">${l}</button>`).join("")}</div>`;
@@ -490,10 +521,12 @@
   }
 
   // ---------- Ricerca percorsi ----------
-  let searchSeq = 0;
+  let searchSeq = 0, searchAbort = null;
   function maybeSearch() { if (state.from && state.to) search(); }
   async function search(cursor) {
     const seq = ++searchSeq; hideSugg(); blurInputs();
+    if (searchAbort) searchAbort.abort();
+    const ctl = searchAbort = new AbortController();
     const from = state.from, to = state.to;
     if (!cursor) { routeLayer.clearLayers(); loading(state.mode === "TRANSIT" ? "Cerco i mezzi…" : "Calcolo il percorso…"); }
     try {
@@ -505,7 +538,7 @@
           transitModes: "TRANSIT", directModes: "WALK", preTransitModes: "WALK", postTransitModes: "WALK",
           maxPreTransitTime: 1200, maxPostTransitTime: 1200, maxDirectTime: 3600,
           numItineraries: 5, language: "it", detailedTransfers: true
-        });
+        }, ctl.signal);
         if (seq !== searchSeq) return;
         const its = (plan.itineraries || []).map((x) => ({ kind: "transit", ...x }));
         const direct = (plan.direct || []).map((x) => ({ kind: "transit", direct: true, ...x }));
@@ -514,26 +547,27 @@
         state.nextCursor = plan.nextPageCursor;
         showResults();
       } else {
-        const items = await roadRoutes(state.mode, from, to);
+        const items = await roadRoutes(state.mode, from, to, ctl.signal);
         if (seq !== searchSeq) return;
         state.lastPlan = { items, direct: [], mode: state.mode }; state.nextCursor = null;
         showResults();
       }
     } catch (e) {
-      if (seq !== searchSeq) return;
-      view("Nessun percorso", errorBox(e.message, true), { root: true, level: 1, bind: (r) => { const b = r.querySelector("[data-retry]"); if (b) b.onclick = () => search(); } });
+      if (seq !== searchSeq || e.name === "AbortError") return;
+      view(e.kind ? "Nessuna risposta" : "Nessun percorso", errorBox(e.message, true), { root: true, level: 1, bind: (r) => { const b = r.querySelector("[data-retry]"); if (b) b.onclick = () => search(); } });
     }
   }
   function placeParam(p) { return `${p.lat},${p.lon}`; }
 
-  async function roadRoutes(mode, from, to) {
+  async function roadRoutes(mode, from, to, signal) {
     const base = mode === "CAR" ? CFG.routingCar : CFG.routingFoot;
     try {
-      const routes = await osrm(base, from, to, mode === "CAR");
+      const routes = await osrm(base, from, to, mode === "CAR", signal);
       return routes.map((r) => osrmItem(r, mode));
     } catch (first) {
+      if (first.name === "AbortError" || first.kind === "offline") throw first;
       // Riserva: stesso calcolo con Transitous
-      const plan = await motis("plan", { fromPlace: placeParam(from), toPlace: placeParam(to), directModes: mode, maxDirectTime: 6 * 3600, numItineraries: 1, language: "it", time: new Date().toISOString() });
+      const plan = await motis("plan", { fromPlace: placeParam(from), toPlace: placeParam(to), directModes: mode, maxDirectTime: 6 * 3600, numItineraries: 1, language: "it", time: new Date().toISOString() }, signal);
       const d = (plan.direct || []);
       if (!d.length) throw first;
       return d.map((it) => {
@@ -949,7 +983,10 @@
       const it = osrmItem(routes[0], NAV.mode);
       setRoute(makeLine(it.geometry), it.steps, it.duration);
       drawNav(it.geometry, NAV.mode === "CAR" ? cssVar("--car") : cssVar("--walk"), NAV.mode === "WALK");
-    } catch (e) { toast("Ricalcolo non riuscito: " + e.message); }
+    } catch (e) {
+      if (navigator.onLine === false) summary("Offline · ricalcolo appena torna la rete");
+      else toast("Ricalcolo non riuscito: " + e.message);
+    }
   }
   function arrived() {
     NAV.arrived = true;
@@ -1033,6 +1070,29 @@
   $("#navVoice").onclick = () => { NAV.voice = !NAV.voice; store("voice", NAV.voice); if (!NAV.voice) hush(); voiceBtn(); };
   $("#navCenter").onclick = () => { NAV.follow = true; $("#navCenter").hidden = true; if (NAV.pos) map.setView(NAV.pos, 17); };
   map.on("dragstart", () => { if (NAV.active) { NAV.follow = false; $("#navCenter").hidden = false; } });
+
+  // ---------- Rete: avvisi quando va e viene ----------
+  function netChanged() {
+    const off = navigator.onLine === false;
+    $("#net").hidden = !off;
+    document.body.classList.toggle("offline", off);
+    return off;
+  }
+  window.addEventListener("offline", () => {
+    netChanged();
+    if (NAV.active) { speak("Connessione persa. Continuo con il percorso già scaricato"); summary("Offline · percorso già scaricato"); }
+  });
+  window.addEventListener("online", () => {
+    netChanged(); toast("Di nuovo online");
+    if (NAV.active) { speak("Connessione tornata"); if (NAV.kind === "road" && NAV.off >= 3 && NAV.pos) reroute(NAV.pos); }
+  });
+  netChanged();
+
+  // Service worker: l'app si apre anche senza rete (non serve nell'app Android, che ha già i file dentro)
+  const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  if ("serviceWorker" in navigator && window.isSecureContext && !isNative && !/[?&]nosw\b/.test(location.search)) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
 
   // ---------- Avvio ----------
   const savedMode = store("mode");

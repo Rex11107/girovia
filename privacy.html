@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Girovia · Privacy</title>
+<meta name="description" content="Quali dati usa Girovia e a chi vengono inviati.">
+<style>
+@font-face{font-family:"Atkinson Hyperlegible";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/barlow-condensed-latin-700-normal.woff2) format("woff2")}
+:root{--bg:#f4f6f8;--surface:#ffffff;--line:#d9dfe5;--fg:#14202b;--muted:#5b6876;--accent:#0d6e63;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#11171c;--surface:#1a2228;--line:#33404a;--fg:#e8eef3;--muted:#9aa8b4;--accent:#4cc3b2;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 "Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:calc(env(safe-area-inset-top,0px) + 24px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 40px) max(16px,env(safe-area-inset-left,0px))}
+main{max-width:68ch;margin:0 auto}
+h1{font:700 34px/1.05 "Barlow Condensed","Arial Narrow",sans-serif;margin:0 0 6px}
+h2{font:700 22px/1.15 "Barlow Condensed","Arial Narrow",sans-serif;margin:28px 0 8px}
+p,li{margin:0 0 10px}
+.lead{font-size:18px}
+.muted{color:var(--muted)}
+a{color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:6px 0 10px}
+th,td{text-align:left;vertical-align:top;padding:8px 8px 8px 0;border-bottom:1px solid var(--line)}
+th{font-weight:700}
+.scroll{overflow-x:auto}
+.back{display:inline-block;margin-bottom:18px;font-weight:700;text-decoration:none}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="./">← Torna a Girovia</a>
+<h1>Privacy</h1>
+<p class="muted">Ultimo aggiornamento: 21 ottobre 2026</p>
+<p class="lead">Girovia non ha un server suo, non ha account, non usa pubblicità né strumenti di statistica o tracciamento. Per mostrarti mappe, orari e percorsi, però, il telefono deve chiedere i dati a servizi esterni: qui trovi quali, e cosa ricevono.</p>
+
+<h2>Cosa resta solo sul telefono</h2>
+<p>Luoghi recenti, preferiti (Casa, Lavoro e altri), viaggi salvati e le tue impostazioni (mezzo scelto, voce attiva o spenta) restano nella memoria dell'app sul tuo telefono. Non vengono inviati a nessuno. Li cancelli dall'app (Recenti → Cancella cronologia, la ✕ accanto a preferiti e viaggi) o cancellando i dati dell'app dalle impostazioni del telefono.</p>
+<p>Per funzionare anche senza rete, l'app conserva sul telefono i propri file e le parti di mappa già viste (al massimo circa 1.500 riquadri).</p>
+
+<h2>Cosa viene inviato, e a chi</h2>
+<p>Ogni richiesta parte dal tuo telefono, quindi chi la riceve vede anche il tuo indirizzo IP, come per qualsiasi sito web.</p>
+<div class="scroll"><table>
+<thead><tr><th scope="col">Servizio</th><th scope="col">Quando</th><th scope="col">Cosa riceve</th></tr></thead>
+<tbody>
+<tr><td><a href="https://transitous.org" target="_blank" rel="noopener">Transitous</a><br><span class="muted">progetto comunitario, Germania/UE</span></td><td>Ricerca di luoghi, percorsi con i mezzi, partenze, corse, fermate sulla mappa</td><td>Il testo che cerchi, le coordinate di partenza e arrivo, la zona della mappa che guardi, l'orario scelto</td></tr>
+<tr><td><a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">OSRM di FOSSGIS</a><br><span class="muted">associazione, Germania/UE</span></td><td>Percorsi in auto e a piedi, ricalcolo in navigazione</td><td>Le coordinate di partenza e arrivo; durante il ricalcolo, la tua posizione in quel momento</td></tr>
+<tr><td><a href="https://osmfoundation.org/wiki/Privacy_Policy" target="_blank" rel="noopener">OpenStreetMap</a> (e, se non risponde, OSM France o CARTO)</td><td>Disegno della mappa</td><td>I riquadri di mappa che guardi, quindi la zona in cui ti trovi o che consulti</td></tr>
+<tr><td><a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub Pages</a></td><td>Solo la versione web, quando apri l'indirizzo rex11107.github.io</td><td>La richiesta della pagina, come per ogni sito</td></tr>
+</tbody>
+</table></div>
+<p>La tua posizione GPS non viene mai inviata di continuo: resta sul telefono e serve a seguirti sulla mappa e in navigazione. Esce dal telefono solo quando scegli "La mia posizione" come partenza (diventa la partenza della ricerca) o quando la navigazione ricalcola il percorso.</p>
+<p>I caratteri tipografici e la libreria della mappa sono inclusi nell'app: non vengono scaricati da Google o da altri siti.</p>
+
+<h2>Permessi</h2>
+<ul>
+<li><b>Posizione</b>: chiesta solo quando tocchi "La mia posizione" o avvii una navigazione.</li>
+<li><b>Notifiche</b> (app Android): chieste quando usi "Segui il viaggio", per avvisarti 2 minuti prima della fermata in cui scendere.</li>
+<li><b>Vibrazione e schermo acceso</b>: solo durante la navigazione.</li>
+</ul>
+
+<h2>Codice e contatti</h2>
+<p>Il codice di Girovia è pubblico su <a href="https://github.com/Rex11107/girovia" target="_blank" rel="noopener">github.com/Rex11107/girovia</a>: puoi verificare tutto quanto scritto qui. Per domande o segnalazioni apri una segnalazione (issue) in quella pagina.</p>
+</main>
+</body>
+</html>

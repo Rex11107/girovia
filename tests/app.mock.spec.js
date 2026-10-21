@@ -7,6 +7,7 @@ const path = require("path");
 const FX = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures.json"), "utf8"));
 const LEAFLET = path.join(__dirname, "..", "node_modules", "leaflet", "dist");
 const NOW = "2026-10-21T06:30:00Z";
+const TILE_PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64");
 
 async function setup(page, opts = {}) {
   const calls = [];
@@ -18,7 +19,7 @@ async function setup(page, opts = {}) {
     if (u.startsWith("http://127.0.0.1")) return route.continue();
     if (u.includes("leaflet.min.js")) return route.fulfill({ path: path.join(LEAFLET, "leaflet.js"), contentType: "application/javascript" });
     if (u.includes("leaflet.min.css")) return route.fulfill({ path: path.join(LEAFLET, "leaflet.css"), contentType: "text/css" });
-    if (u.includes("tile.openstreetmap") || u.includes("fonts.")) return route.fulfill({ status: 204, body: "" });
+    if (/tile\.openstreetmap|cartocdn/.test(u)) return route.fulfill({ body: TILE_PNG, contentType: "image/png", headers: { "access-control-allow-origin": "*" } });
     calls.push(u);
     if (u.includes("transitous")) {
       if (opts.failTransit) return route.fulfill({ status: 503, body: "down" });
