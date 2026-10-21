@@ -2,10 +2,10 @@
 
 import { showDepartures } from "./views.js";
 import { motis } from "./api.js";
-import { $, cssVar, toast } from "./ui.js";
+import { $, ICONS, cssVar, modeColor, toast } from "./ui.js";
 import { blurInputs, hideSugg, isFav, setPlace, toggleFav } from "./places.js";
-import { areaLabel, decodePolyline, distM, esc, fmtTime, placeLabel } from "./util.js";
-import { CFG, state } from "./state.js";
+import { areaLabel, decodePolyline, distM, esc, fmtTime, isTransitLeg, placeLabel, rentalLabel, streetKind } from "./util.js";
+import { CFG, state, store } from "./state.js";
 
 // ---------- Mappa ----------
 export const map = L.map("map", { zoomControl: false, attributionControl: true }).setView(CFG.center || [43.7731, 11.256], CFG.zoom || 12);
@@ -30,6 +30,7 @@ function useProvider(i) {
 }
 export const routeLayer = L.layerGroup().addTo(map);
 const stopsLayer = L.layerGroup().addTo(map);
+const rentalsLayer = L.layerGroup().addTo(map);
 const pinLayer = L.layerGroup().addTo(map);
 let meMarker = null;
 
@@ -73,8 +74,31 @@ export function nearbyStops() {
   const c = map.getCenter(); const here = [c.lat, c.lng];
   return visibleStops.map((s) => ({ ...s, d: distM(here, [s.lat, s.lon]) })).sort((a, b) => a.d - b.d);
 }
+// Bici e monopattini in sharing nella zona visibile (se il servizio pubblica i dati e l'opzione è attiva)
+const RENT_ICON = (kind) => L.divIcon({ className: "rentdot", html: kind === "SCOOTER" ? ICONS.SCOOTER : ICONS.BIKE, iconSize: [22, 22], iconAnchor: [11, 11] });
+async function loadRentals(b) {
+  rentalsLayer.clearLayers();
+  if (store("sharing") === false) return;
+  try {
+    const r = await motis("rentals", { min: `${b.getSouth()},${b.getWest()}`, max: `${b.getNorth()},${b.getEast()}`, withProviders: true, withStations: true, withVehicles: true, withZones: false }, stopsAbort && stopsAbort.signal);
+    const prov = Object.fromEntries((r.providers || []).map((x) => [x.id, x]));
+    const items = [
+      ...(r.stations || []).filter((s) => s.isRenting !== false && s.numVehiclesAvailable > 0).map((s) => ({ lat: s.lat, lon: s.lon, ff: (s.formFactors || [])[0], p: prov[s.providerId], label: `${s.name} · ${s.numVehiclesAvailable} disponibili`, url: s.rentalUriWeb })),
+      ...(r.vehicles || []).filter((v) => !v.stationId && !v.isReserved && !v.isDisabled).map((v) => ({ lat: v.lat, lon: v.lon, ff: v.formFactor, p: prov[v.providerId], label: "", url: v.rentalUriWeb }))
+    ].slice(0, 300);
+    for (const it of items) {
+      const kind = /SCOOTER|MOPED/.test(it.ff || "") ? "SCOOTER" : "BIKE";
+      const what = rentalLabel({ formFactor: it.ff, systemName: it.p && it.p.name });
+      const url = [it.url, it.p && it.p.url].find((u) => typeof u === "string" && /^https:\/\//.test(u));
+      const html = `<b>${esc(what.charAt(0).toUpperCase() + what.slice(1))}</b>${it.label ? `<div class="muted small">${esc(it.label)}</div>` : ""}${url ? `<div class="popbtns"><a class="btn small" href="${esc(url)}" target="_blank" rel="noopener">Apri il servizio</a></div>` : ""}`;
+      const m = L.marker([it.lat, it.lon], { icon: RENT_ICON(kind), keyboard: true, title: what }).bindPopup(html).addTo(rentalsLayer);
+      const el = m.getElement(); if (el) el.setAttribute("aria-label", `${what}: dettagli`);
+    }
+  } catch (e) { /* nessun dato di sharing in questa zona */ }
+}
+
 async function loadStops() {
-  if (map.getZoom() < 16) { stopsLayer.clearLayers(); visibleStops = []; updateStopsButton(); return; }
+  if (map.getZoom() < 16) { stopsLayer.clearLayers(); rentalsLayer.clearLayers(); visibleStops = []; updateStopsButton(); return; }
   if (stopsAbort) stopsAbort.abort(); stopsAbort = new AbortController();
   const b = map.getBounds();
   try {
@@ -95,6 +119,7 @@ async function loadStops() {
       if (el) el.setAttribute("aria-label", `Fermata ${s.name}: mostra le partenze`);
     });
     updateStopsButton();
+    loadRentals(b);
   } catch (e) { if (e.name !== "AbortError") { stopsLayer.clearLayers(); visibleStops = []; updateStopsButton(); } }
 }
 
@@ -122,15 +147,15 @@ export function drawItin(it, light) {
   const pts = [];
   const casing = cssVar("--surface") || "#fff";
   if (it.kind === "road") {
-    const col = it.mode === "CAR" ? cssVar("--car") : cssVar("--walk");
+    const col = modeColor(it.mode);
     L.polyline(it.geometry, { color: casing, weight: 9, opacity: light ? 0.6 : 0.9 }).addTo(routeLayer);
     L.polyline(it.geometry, { color: col, weight: 6, opacity: light ? 0.7 : 1, dashArray: it.mode === "WALK" ? "2 9" : null, lineCap: "round" }).addTo(routeLayer);
     pts.push(...it.geometry);
   } else {
     for (const l of it.legs || []) {
       const g = decodePolyline(l.legGeometry.points, l.legGeometry.precision); pts.push(...g);
-      if (l.mode === "WALK" || l.mode === "CAR") {
-        L.polyline(g, { color: l.mode === "CAR" ? cssVar("--car") : cssVar("--walk"), weight: 5, dashArray: l.mode === "WALK" ? "2 9" : null, lineCap: "round", opacity: light ? 0.7 : 1 }).addTo(routeLayer);
+      if (!isTransitLeg(l)) {
+        L.polyline(g, { color: modeColor(streetKind(l)), weight: 5, dashArray: l.mode === "WALK" ? "2 9" : null, lineCap: "round", opacity: light ? 0.7 : 1 }).addTo(routeLayer);
       } else {
         const col = l.routeColor ? "#" + l.routeColor : cssVar("--transit");
         L.polyline(g, { color: casing, weight: 10, opacity: light ? 0.6 : 0.9 }).addTo(routeLayer);

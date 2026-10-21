@@ -10,6 +10,10 @@ window.GIROVIA_CONFIG = {
   // Percorsi in auto e a piedi (OpenStreetMap, server FOSSGIS)
   routingCar: "https://routing.openstreetmap.de/routed-car",
   routingFoot: "https://routing.openstreetmap.de/routed-foot",
+  routingBike: "https://routing.openstreetmap.de/routed-bike",
+
+  // Indirizzo usato nei link "Condividi" (deve essere la versione web dell'app)
+  shareBase: "https://rex11107.github.io/girovia/",
 
   // Sicurezza: index.html ha una Content-Security-Policy. Se cambi "transitous" o i
   // server di routing qui sotto, aggiungi il nuovo indirizzo anche in connect-src.

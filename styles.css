@@ -8,7 +8,7 @@
 :root{
   --bg:#f4f6f8; --surface:#ffffff; --surface-2:#eef1f4; --line:#d9dfe5;
   --fg:#14202b; --muted:#5b6876; --accent:#0d6e63; --accent-fg:#ffffff;
-  --walk:#6b7783; --car:#2457c5; --transit:#b3261e; --warn:#b15c00; --ok:#1f7a3a; --bad:#b3261e;
+  --walk:#6b7783; --car:#2457c5; --bike:#7a4bc2; --transit:#b3261e; --warn:#b15c00; --ok:#1f7a3a; --bad:#b3261e;
   --shadow:0 6px 24px rgba(20,32,43,.14);
   --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-sign:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
@@ -18,12 +18,12 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#11171c; --surface:#1a2228; --surface-2:#232d35; --line:#33404a;
   --fg:#e8eef3; --muted:#9aa8b4; --accent:#4cc3b2; --accent-fg:#06201c;
-  --walk:#9aa8b4; --car:#7ea6ff; --transit:#ff7a6e; --warn:#f0a44b; --ok:#5fd08a; --bad:#ff7a6e;
+  --walk:#9aa8b4; --car:#7ea6ff; --bike:#b993ff; --transit:#ff7a6e; --warn:#f0a44b; --ok:#5fd08a; --bad:#ff7a6e;
   --shadow:0 6px 24px rgba(0,0,0,.45); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#11171c; --surface:#1a2228; --surface-2:#232d35; --line:#33404a;
   --fg:#e8eef3; --muted:#9aa8b4; --accent:#4cc3b2; --accent-fg:#06201c;
-  --walk:#9aa8b4; --car:#7ea6ff; --transit:#ff7a6e; --warn:#f0a44b; --ok:#5fd08a; --bad:#ff7a6e;
+  --walk:#9aa8b4; --car:#7ea6ff; --bike:#b993ff; --transit:#ff7a6e; --warn:#f0a44b; --ok:#5fd08a; --bad:#ff7a6e;
   --shadow:0 6px 24px rgba(0,0,0,.45); color-scheme:dark}
 
 *{box-sizing:border-box}
@@ -64,7 +64,7 @@ button{cursor:pointer}
 #swap{grid-row:1/3;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .modes{display:flex;background:var(--surface-2);border-radius:12px;padding:3px;flex:1 1 auto;min-width:0}
-.modes button{flex:1;border:0;background:none;border-radius:9px;height:36px;display:flex;gap:6px;align-items:center;justify-content:center;color:var(--muted);font-weight:700;white-space:nowrap}
+.modes button{flex:1;border:0;background:none;border-radius:9px;height:36px;display:flex;gap:4px;padding:0 4px;align-items:center;justify-content:center;color:var(--muted);font-weight:700;white-space:nowrap}
 .modes button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .modes svg{width:18px;height:18px}
 .when{display:flex;gap:6px;align-items:center;flex:1 1 100%;min-width:0}
@@ -230,3 +230,15 @@ body.navigating #stopsBtn{display:none}
 .tag.past{background:var(--surface-2);color:var(--muted)}
 .tag.next{background:var(--accent);color:var(--accent-fg)}
 .tag.mine{margin-left:6px;border:1.5px solid var(--accent);color:var(--fg)}
+
+/* Bici e monopattini in sharing sulla mappa */
+.rentdot{display:grid!important;place-items:center;background:var(--bike);color:#fff;border:2px solid #fff;border-radius:7px;box-shadow:0 1px 3px rgba(0,0,0,.35);cursor:pointer}
+.rentdot svg{width:15px;height:15px}
+.rentdot:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Biglietti, opzioni */
+.ticket{display:flex;flex-wrap:wrap;gap:2px 10px;align-items:center}
+.ticket a{display:inline-flex;gap:5px;align-items:center;color:var(--accent);font-weight:700;font-size:14px}
+.switch{display:flex;gap:10px;align-items:flex-start;padding:6px 0 10px;cursor:pointer}
+.switch input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent);flex:0 0 auto}
+.switch small{display:block;color:var(--muted);font-size:13px}

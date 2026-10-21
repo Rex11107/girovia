@@ -115,3 +115,37 @@ test("fermate: mezzi e nomi delle zone", () => {
   assert.equal(U.lineName({ routeShortName: "", displayName: "", mode: "REGIONAL_RAIL" }), "Regionale");
   assert.equal(U.esc(`<a href="x">'&'</a>`), "&lt;a href=&quot;x&quot;&gt;&#39;&amp;&#39;&lt;/a&gt;");
 });
+
+test("tratte su strada e corse di linea, sharing", () => {
+  assert.equal(U.isTransitLeg({ mode: "BUS" }), true);
+  assert.equal(U.isTransitLeg({ mode: "REGIONAL_RAIL" }), true);
+  for (const m of ["WALK", "CAR", "BIKE", "RENTAL"]) assert.equal(U.isTransitLeg({ mode: m }), false, m);
+  assert.equal(U.streetKind({ mode: "RENTAL", rental: { formFactor: "SCOOTER_STANDING" } }), "SCOOTER");
+  assert.equal(U.streetKind({ mode: "RENTAL", rental: { formFactor: "BICYCLE" } }), "BIKE");
+  assert.equal(U.streetKind({ mode: "CAR" }), "CAR");
+  assert.equal(U.rentalLabel({ formFactor: "SCOOTER_STANDING", systemName: "Dott" }), "monopattino Dott");
+  assert.equal(U.rentalLabel({ formFactor: "BICYCLE" }), "bici in sharing");
+  assert.equal(U.osrmText({ maneuver: { type: "depart" }, name: "" }, "BIKE"), "Parti in bici");
+});
+
+test("biglietti: link dell'azienda, poi siti noti, solo https", () => {
+  assert.deepEqual(U.ticketInfo({ mode: "BUS", ticketUrls: { web: "https://esempio.it/t" }, agencyName: "at - Firenze extraurbano" }), { url: "https://esempio.it/t", label: "Biglietti" });
+  assert.equal(U.ticketInfo({ mode: "BUS", agencyName: "at - Firenze extraurbano" }).url, "https://www.at-bus.it/it");
+  assert.equal(U.ticketInfo({ mode: "TRAM", agencyName: "GEST S.p.A." }).label, "Biglietti AT");
+  assert.equal(U.ticketInfo({ mode: "REGIONAL_RAIL", agencyName: "TRENITALIA" }).url, "https://www.trenitalia.com/");
+  assert.equal(U.ticketInfo({ mode: "BUS", agencyName: "Altra", agencyFareUrl: "javascript:alert(1)", agencyUrl: "http://insicuro" }), null);
+  assert.equal(U.ticketInfo({ mode: "WALK", agencyName: "TRENITALIA" }), null);
+});
+
+test("link condivisi: andata e ritorno, valori non validi scartati", () => {
+  const s = { from: { lat: 43.7764, lon: 11.248, name: "Firenze SMN" }, to: { lat: 43.7745, lon: 11.433, name: "Pontassieve" }, mode: "TRANSIT", time: "2026-10-21T06:00:00.000Z", arriveBy: true };
+  const back = U.parseShare("?" + U.shareQuery(s));
+  assert.equal(back.from.name, "Firenze SMN"); assert.equal(back.to.lat, 43.7745);
+  assert.equal(back.mode, "TRANSIT"); assert.equal(back.time, s.time); assert.equal(back.arriveBy, true);
+  assert.equal(U.parseShare("?da=43.7,11.2&a=95,11.2"), null);
+  assert.equal(U.parseShare("?da=43.7,11.2"), null);
+  const x = U.parseShare("?da=43.7,11.2&a=43.8,11.3&m=ROCKET&t=ieri&dn=%3Cb%3E");
+  assert.equal(x.mode, "TRANSIT"); assert.equal(x.time, null); assert.equal(x.arriveBy, false);
+  assert.equal(x.from.name, "<b>"); // il testo si mostra sempre passando da esc()
+  assert.equal(x.to.name, "Punto condiviso");
+});

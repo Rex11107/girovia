@@ -11,12 +11,20 @@ RES=$APP/src/main/res
 for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do cp "$SRC/res/mipmap-$d/"*.png "$RES/mipmap-$d/"; done
 cp "$SRC/res/values/ic_launcher_background.xml" "$RES/values/ic_launcher_background.xml"
 
+# Scorciatoie dell'icona: Vai a Casa / Vai al Lavoro
+mkdir -p "$RES/xml" "$RES/drawable"
+cp "$SRC/res/xml/shortcuts.xml" "$RES/xml/shortcuts.xml"
+cp "$SRC/res/drawable/"ic_shortcut_*.xml "$RES/drawable/"
+cp "$SRC/res/values/girovia_shortcuts.xml" "$RES/values/girovia_shortcuts.xml"
+
 # Schermata di avvio: sostituisce l'immagine di esempio in tutte le densità
 find "$RES" -name 'splash.png' -exec cp "$SRC/res/splash.png" {} \;
 
 # Permessi posizione (la richiesta compare solo quando tocchi "La mia posizione")
 MAN=$APP/src/main/AndroidManifest.xml
 grep -q ACCESS_FINE_LOCATION "$MAN" || sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-feature android:name="android.hardware.location.gps" android:required="false" />\n</manifest>#' "$MAN"
+
+grep -q "android.app.shortcuts" "$MAN" || sed -i 's#</activity>#    <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />\n        </activity>#' "$MAN"
 
 # Navigazione: vibrazione e avvisi di discesa programmati (anche a schermo spento)
 for P in "android.permission.VIBRATE" "android.permission.POST_NOTIFICATIONS" "android.permission.USE_EXACT_ALARM"; do

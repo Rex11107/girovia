@@ -1,11 +1,11 @@
 // Navigazione: auto e piedi con voce e ricalcolo; mezzi con avvisi di discesa.
 
-import { motis, osrm } from "./api.js";
+import { motis, osrm, routingBase } from "./api.js";
 import { drawItin, map, routeLayer, showMe } from "./map.js";
-import { decodePolyline, fmtDist, fmtDur, fmtTime, itinAlerts, legAlerts, lineName, lowerFirst, makeLine, motisSteps, osrmItem, projectOn, spokenDist } from "./util.js";
+import { decodePolyline, fmtDist, fmtDur, fmtTime, isTransitLeg, itinAlerts, legAlerts, lineName, lowerFirst, makeLine, motisSteps, osrmItem, projectOn, rentalLabel, spokenDist, streetKind } from "./util.js";
 import { blurInputs, hideSugg } from "./places.js";
-import { $, ICONS, cssVar, legChip, toast } from "./ui.js";
-import { CFG, NAV, state, store } from "./state.js";
+import { $, ICONS, cssVar, legChip, modeColor, toast } from "./ui.js";
+import { NAV, state, store } from "./state.js";
 
 // Auto e piedi: segue il GPS, indicazione successiva, voce, ricalcolo se esci dal percorso.
 // Mezzi: segue il viaggio tratta per tratta e avvisa quando scendere.
@@ -106,24 +106,32 @@ function onFix(pos) {
   if (!NAV.active) return;
   const p = [pos.coords.latitude, pos.coords.longitude], acc = pos.coords.accuracy || 0;
   NAV.pos = p; showMe(p);
-  if (NAV.follow) map.setView(p, NAV.kind === "road" && NAV.mode === "CAR" ? 17 : 18, { animate: true });
+  if (NAV.follow) map.setView(p, NAV.kind === "road" && NAV.mode !== "WALK" ? 17 : 18, { animate: true });
   if (NAV.arrived) return;
   if (NAV.kind === "road") { const r = guide(p, acc, NAV.mode, true); if (r === "arrived") arrived(); }
   else tripUpdate(p, acc);
 }
 
-// Auto e piedi: avanzamento, annunci, uscita dal percorso
+// Soglie per mezzo (metri): fuori percorso, arrivo, quando annunciare la prossima svolta
+const GUIDE = {
+  CAR: { off: 45, arrive: 35, say: [1000, 400, 120, 25] },
+  BIKE: { off: 35, arrive: 25, say: [300, 100, 25] },
+  SCOOTER: { off: 35, arrive: 25, say: [300, 100, 25] },
+  WALK: { off: 30, arrive: 20, say: [70, 15] }
+};
+// Auto, bici e piedi: avanzamento, annunci, uscita dal percorso
 function guide(p, acc, mode, allowReroute) {
   const pr = projectOn(NAV.line, p, NAV.hint); NAV.hint = pr.idx;
-  NAV.off = pr.dist > (mode === "CAR" ? 45 : 30) && acc <= 50 ? NAV.off + 1 : 0;
+  const T = GUIDE[mode] || GUIDE.WALK;
+  NAV.off = pr.dist > T.off && acc <= 50 ? NAV.off + 1 : 0;
   if (allowReroute && NAV.off >= 3) { if (Date.now() - (NAV.lastReroute || 0) > 15000) reroute(p); return "reroute"; }
   const remain = Math.max(0, NAV.line.len - pr.along);
-  if (remain < (mode === "CAR" ? 35 : 20)) return "arrived";
+  if (remain < T.arrive) return "arrived";
   const k = NAV.steps.findIndex((x) => x.at > pr.along + 3 && x.type !== "depart");
   const next = NAV.steps[k < 0 ? NAV.steps.length - 1 : k], key = k < 0 ? NAV.steps.length - 1 : k;
   const d = Math.max(0, next.at - pr.along), after = NAV.steps[key + 1];
   banner({ icon: arrowSvg(next), dist: fmtDist(d), text: next.text, then: after && after.at - next.at < 150 ? "Poi: " + lowerFirst(after.text) : "" });
-  const ths = mode === "CAR" ? [1000, 400, 120, 25] : [70, 15];
+  const ths = T.say;
   const th = ths.filter((t) => d <= t).pop();
   if (th != null && !NAV.done.has(key + ":" + th)) {
     ths.filter((t) => t >= th).forEach((t) => NAV.done.add(key + ":" + t));
@@ -140,11 +148,11 @@ export async function reroute(p) {
   NAV.lastReroute = Date.now(); NAV.off = 0;
   speak("Ricalcolo il percorso"); banner({ icon: "", dist: "", text: "Ricalcolo il percorso…" });
   try {
-    const routes = await osrm(NAV.mode === "CAR" ? CFG.routingCar : CFG.routingFoot, { lat: p[0], lon: p[1] }, NAV.dest, false);
+    const routes = await osrm(routingBase(NAV.mode), { lat: p[0], lon: p[1] }, NAV.dest, false);
     if (!NAV.active) return;
     const it = osrmItem(routes[0], NAV.mode);
     setRoute(makeLine(it.geometry), it.steps, it.duration);
-    drawNav(it.geometry, NAV.mode === "CAR" ? cssVar("--car") : cssVar("--walk"), NAV.mode === "WALK");
+    drawNav(it.geometry, modeColor(NAV.mode), NAV.mode === "WALK");
   } catch (e) {
     if (navigator.onLine === false) summary("Offline · ricalcolo appena torna la rete");
     else toast("Ricalcolo non riuscito: " + e.message);
@@ -160,7 +168,7 @@ function arrived() {
 export function startRoadNav(it) {
   NAV.kind = "road"; NAV.mode = it.mode; NAV.dest = state.to; NAV.lastReroute = 0;
   setRoute(makeLine(it.geometry), it.steps, it.duration);
-  drawNav(it.geometry, it.mode === "CAR" ? cssVar("--car") : cssVar("--walk"), it.mode === "WALK");
+  drawNav(it.geometry, modeColor(it.mode), it.mode === "WALK");
   const first = NAV.steps.find((x) => x.type !== "depart") || NAV.steps[0];
   banner({ icon: arrowSvg(first), dist: fmtDist(first.at), text: first.text });
   summary("In attesa del segnale GPS…");
@@ -174,7 +182,7 @@ export function startTripNav(it) {
   NAV.legs = (it.legs || []).map((l) => {
     let pts = decodePolyline(l.legGeometry && l.legGeometry.points, l.legGeometry && l.legGeometry.precision);
     if (pts.length < 2) pts = [[l.from.lat, l.from.lon], [l.to.lat, l.to.lon]];
-    const line = makeLine(pts), isT = l.mode !== "WALK" && l.mode !== "CAR";
+    const line = makeLine(pts), isT = isTransitLeg(l);
     const g = { l, isT, line, pts };
     if (isT) g.stops = [l.from, ...(l.intermediateStops || []), l.to].map((x) => ({ name: x.name, stopId: x.stopId, time: x.arrival || x.departure, at: projectOn(line, [x.lat, x.lon]).along }));
     else g.steps = motisSteps(l.steps);
@@ -242,8 +250,12 @@ function enterLeg(i) {
   if (!g.isT) {
     const next = NAV.legs[i + 1];
     setRoute(g.line, g.steps, g.l.duration, next && next.isT ? `Arrivo alla fermata ${next.l.from.name}` : "Arrivo a destinazione");
-    const goal = next && next.isT ? `Vai a piedi alla fermata ${next.l.from.name}` : "Prosegui a piedi verso la destinazione";
-    banner({ icon: ICONS.WALK, dist: fmtDist(g.line.len), text: goal });
+    const kind = streetKind(g.l), r = g.l.rental;
+    const target = next && next.isT ? `alla fermata ${next.l.from.name}` : "verso la destinazione";
+    const goal = g.l.mode === "RENTAL"
+      ? `Prendi ${rentalLabel(r)}${r && r.fromStationName ? " a " + r.fromStationName : ""} e vai ${target}`
+      : (next && next.isT ? `Vai a piedi alla fermata ${next.l.from.name}` : "Prosegui a piedi verso la destinazione");
+    banner({ icon: kind === "SCOOTER" ? ICONS.SCOOTER : (kind === "BIKE" ? ICONS.BIKE : ICONS.WALK), dist: fmtDist(g.line.len), text: goal });
     speak(goal + (next && next.isT ? `. ${lineName(next.l)} alle ${fmtTime(next.l.startTime)}` : ""));
   } else {
     NAV.line = g.line; NAV.hint = 0; NAV.done = new Set();
@@ -255,7 +267,7 @@ function enterLeg(i) {
 function tripUpdate(p, acc) {
   const g = NAV.legs[NAV.li], last = NAV.li === NAV.legs.length - 1;
   if (!g.isT) {
-    const r = guide(p, acc, "WALK", false);
+    const r = guide(p, acc, streetKind(g.l), false);
     if (r === "arrived") { if (last) arrived(); else enterLeg(NAV.li + 1); }
     return;
   }

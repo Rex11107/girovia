@@ -128,7 +128,7 @@ export function osrmText(s, mode) {
   const m = s.maneuver || {}; const name = s.name || s.ref || ""; const mod = DIR[m.modifier] || "";
   const on = name ? ` su ${name}` : "";
   switch (m.type) {
-    case "depart": return `Parti${on}${mode === "WALK" ? " a piedi" : ""}`;
+    case "depart": return `Parti${on}${mode === "WALK" ? " a piedi" : (mode === "BIKE" ? " in bici" : "")}`;
     case "arrive": return "Arrivo a destinazione";
     case "roundabout": case "rotary": case "exit roundabout": case "exit rotary": return `Alla rotonda prendi la ${m.exit ? m.exit + "ª " : ""}uscita${name ? " verso " + name : ""}`;
     case "roundabout turn": return `Alla rotonda gira ${mod}${on}`;
@@ -201,3 +201,66 @@ export function spokenDist(d) {
   return `${m} metri`;
 }
 export const lowerFirst = (t) => t ? t.charAt(0).toLowerCase() + t.slice(1) : t;
+
+// ---------- Tipi di tratta ----------
+// Tratte "su strada" (piedi, auto, bici, sharing): non sono corse di linea con fermate e orari
+export const STREET_MODES = new Set(["WALK", "CAR", "BIKE", "RENTAL", "CAR_PARKING", "CAR_DROPOFF", "ODM", "RIDE_SHARING", "FLEX"]);
+export const isTransitLeg = (l) => !!l && !STREET_MODES.has(l.mode);
+// Mezzo con cui si guida una tratta su strada (soglie della navigazione, colore, icona)
+export function streetKind(l) {
+  if (!l) return "WALK";
+  if (l.mode === "RENTAL") return l.rental && /SCOOTER|MOPED/.test(l.rental.formFactor || "") ? "SCOOTER" : "BIKE";
+  return l.mode === "CAR" ? "CAR" : (l.mode === "BIKE" ? "BIKE" : "WALK");
+}
+export const MODE_LABEL = { TRANSIT: "Mezzi", CAR: "Auto", WALK: "A piedi", BIKE: "Bici" };
+export const MODE_TITLE = { CAR: "In auto", WALK: "A piedi", BIKE: "In bici" };
+const FORM = { BICYCLE: "bici", CARGO_BICYCLE: "bici cargo", SCOOTER_STANDING: "monopattino", SCOOTER_SEATED: "scooter", MOPED: "scooter", CAR: "auto" };
+// "monopattino Dott", "bici RideMovi"
+export function rentalLabel(r) {
+  if (!r) return "mezzo in sharing";
+  const what = FORM[r.formFactor] || "mezzo in sharing";
+  return r.systemName ? `${what} ${r.systemName}` : `${what} in sharing`;
+}
+
+// ---------- Biglietti ----------
+// Prima i link pubblicati dall'azienda (via Transitous), poi i siti ufficiali noti, poi il sito dell'azienda.
+const httpsOnly = (u) => (typeof u === "string" && /^https:\/\//i.test(u) ? u : null);
+export function ticketInfo(l) {
+  if (!l || !isTransitLeg(l)) return null;
+  const direct = httpsOnly(l.ticketUrls && l.ticketUrls.web) || httpsOnly(l.agencyFareUrl);
+  if (direct) return { url: direct, label: "Biglietti" };
+  const a = `${l.agencyName || ""} ${l.agencyId || ""}`;
+  if (/autolinee toscane|\bat\b|gest|ataf/i.test(a)) return { url: "https://www.at-bus.it/it", label: "Biglietti AT", note: "Anche con carta contactless a bordo di bus e tramvia" };
+  if (/trenitalia/i.test(a)) return { url: "https://www.trenitalia.com/", label: "Biglietti Trenitalia" };
+  const site = httpsOnly(l.agencyUrl);
+  return site ? { url: site, label: "Sito dell'azienda" } : null;
+}
+
+// ---------- Link condivisi ----------
+// ?da=lat,lon&dn=nome&a=lat,lon&an=nome&m=TRANSIT[&t=ISO][&ab=1]
+export const SHARE_MODES = ["TRANSIT", "CAR", "WALK", "BIKE"];
+const coord = (p) => `${(+p.lat).toFixed(6)},${(+p.lon).toFixed(6)}`;
+export function shareQuery(s) {
+  const q = new URLSearchParams();
+  q.set("da", coord(s.from)); q.set("dn", (s.from.name || "").slice(0, 120));
+  q.set("a", coord(s.to)); q.set("an", (s.to.name || "").slice(0, 120));
+  q.set("m", SHARE_MODES.includes(s.mode) ? s.mode : "TRANSIT");
+  if (s.time) q.set("t", s.time);
+  if (s.arriveBy) q.set("ab", "1");
+  return q.toString();
+}
+export function parseShare(search) {
+  const q = new URLSearchParams(search || "");
+  const pt = (v, n) => {
+    const m = /^(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)$/.exec(v || "");
+    if (!m) return null;
+    const lat = +m[1], lon = +m[2];
+    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+    return { lat, lon, name: (n || "").replace(/\p{Cc}/gu, "").slice(0, 120) || "Punto condiviso", type: "POINT" };
+  };
+  const from = pt(q.get("da"), q.get("dn")), to = pt(q.get("a"), q.get("an"));
+  if (!from || !to) return null;
+  const mode = SHARE_MODES.includes(q.get("m")) ? q.get("m") : "TRANSIT";
+  const t = q.get("t"), time = t && !isNaN(Date.parse(t)) ? new Date(t).toISOString() : null;
+  return { from, to, mode, time, arriveBy: q.get("ab") === "1" && !!time };
+}

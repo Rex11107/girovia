@@ -21,7 +21,7 @@ async function fetchT(url, signal, ms) {
   } finally { clearTimeout(timer); if (signal) signal.removeEventListener("abort", onAbort); }
 }
 // Transitous (MOTIS 2) ha più versioni delle API: si prova dalla più recente.
-const VERSIONS = { "plan": [6, 5, 4, 3, 2], "trip": [6, 5, 4, 2], "stoptimes": [6, 5, 4, 1], "map/stops": [6, 1], "geocode": [1], "reverse-geocode": [1] };
+const VERSIONS = { "rentals": [1], "plan": [6, 5, 4, 3, 2], "trip": [6, 5, 4, 2], "stoptimes": [6, 5, 4, 1], "map/stops": [6, 1], "geocode": [1], "reverse-geocode": [1] };
 const knownVersion = {};
 export async function motis(endpoint, params, signal) {
   const qs = new URLSearchParams();
@@ -52,10 +52,25 @@ export async function osrm(base, from, to, alternatives, signal) {
   return j.routes;
 }
 
+// Server OSRM per auto, piedi e bici (config.js)
+export function routingBase(mode) { return mode === "CAR" ? CFG.routingCar : (mode === "BIKE" ? CFG.routingBike : CFG.routingFoot); }
+
+// Bici e monopattini in sharing: c'è un servizio nella zona? (risposta ricordata per zona, ~5 km)
+const sharingCache = new Map();
+export async function sharingNear(p, signal) {
+  const key = `${Math.round(p.lat * 20)},${Math.round(p.lon * 20)}`;
+  if (sharingCache.has(key)) return sharingCache.get(key);
+  let ok = false;
+  try { const r = await motis("rentals", { point: `${p.lat},${p.lon}`, radius: 3000, withProviders: true, withStations: false, withVehicles: false, withZones: false }, signal); ok = !!(r && r.providers && r.providers.length); }
+  catch (e) { if (e.name === "AbortError") throw e; }
+  sharingCache.set(key, ok);
+  return ok;
+}
+
 export async function roadRoutes(mode, from, to, signal) {
-  const base = mode === "CAR" ? CFG.routingCar : CFG.routingFoot;
+  const base = routingBase(mode);
   try {
-    const routes = await osrm(base, from, to, mode === "CAR", signal);
+    const routes = await osrm(base, from, to, mode !== "WALK", signal);
     return routes.map((r) => osrmItem(r, mode));
   } catch (first) {
     if (first.name === "AbortError" || first.kind === "offline") throw first;

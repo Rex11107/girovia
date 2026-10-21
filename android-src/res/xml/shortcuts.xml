@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scorciatoie dell'icona (tieni premuta l'icona di Girovia): aprono l'app con girovia://vai/... -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="casa"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_home"
+        android:shortcutShortLabel="@string/shortcut_home_short"
+        android:shortcutLongLabel="@string/shortcut_home_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="io.github.rex11107.girovia"
+            android:targetClass="io.github.rex11107.girovia.MainActivity"
+            android:data="girovia://vai/casa" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="lavoro"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_work"
+        android:shortcutShortLabel="@string/shortcut_work_short"
+        android:shortcutLongLabel="@string/shortcut_work_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="io.github.rex11107.girovia"
+            android:targetClass="io.github.rex11107.girovia.MainActivity"
+            android:data="girovia://vai/lavoro" />
+    </shortcut>
+</shortcuts>

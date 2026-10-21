@@ -2,7 +2,7 @@
 
 import { state, store } from "./state.js";
 import { routeLayer } from "./map.js";
-import { CAUSE, esc, modeName } from "./util.js";
+import { CAUSE, esc, modeName, streetKind } from "./util.js";
 
 export const $ = (s, r = document) => r.querySelector(s);
 export const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -22,6 +22,9 @@ export function applyTheme(t) {
   if (state.currentDraw) state.currentDraw(); // i colori dei percorsi sulla mappa seguono il tema
 }
 
+// Colore della linea sulla mappa per auto, bici e piedi
+export function modeColor(kind) { return cssVar(kind === "CAR" ? "--car" : (kind === "BIKE" || kind === "SCOOTER" ? "--bike" : "--walk")); }
+
 export function toast(msg) {
   const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; t.setAttribute("role", "status");
   document.body.appendChild(t); setTimeout(() => t.remove(), 3500);
@@ -40,6 +43,8 @@ export const ICONS = {
   FAV: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>',
   HOME: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></svg>',
   WORK: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2M3 13h18"/></svg>',
+  BIKE: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-7h6l2 7M10 9l3 7h-3M14.5 6H17"/></svg>',
+  SCOOTER: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="18" r="2.5"/><circle cx="18.5" cy="18" r="2.5"/><path d="M8 18h8l-2.5-13H17M5.5 18L12 13"/></svg>',
   TRIP: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="18" r="2.5"/><rect x="15.5" y="3.5" width="5" height="5" rx="1"/><path d="M8 16.5c4-1 2-7 7.5-9"/></svg>'
 };
 export const TRASH = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
@@ -59,6 +64,11 @@ export function alertsHtml(list) {
 export function legChip(l) {
   if (l.mode === "WALK") return `<span class="chip walk">${ICONS.WALK}${Math.max(1, Math.round(l.duration / 60))}′</span>`;
   if (l.mode === "CAR") return `<span class="chip" style="background:var(--car)">${ICONS.CAR}</span>`;
+  if (l.mode === "BIKE") return `<span class="chip" style="background:var(--bike)">${ICONS.BIKE}${Math.max(1, Math.round(l.duration / 60))}′</span>`;
+  if (l.mode === "RENTAL") {
+    const k = streetKind(l);
+    return `<span class="chip" style="background:var(--bike)">${k === "SCOOTER" ? ICONS.SCOOTER : ICONS.BIKE}${esc((l.rental && l.rental.systemName) || "Sharing")}</span>`;
+  }
   const name = l.routeShortName || l.displayName || l.tripShortName || modeName(l.mode);
   const bg = l.routeColor ? "#" + l.routeColor : "var(--transit)";
   const fg = l.routeTextColor ? "#" + l.routeTextColor : "#fff";

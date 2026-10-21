@@ -1,16 +1,15 @@
 // Schermate del pannello: iniziale, risultati, dettaglio, corsa intera, partenze.
 
 import { startRoadNav, startTripNav } from "./nav.js";
-import { motis, roadRoutes } from "./api.js";
+import { motis, roadRoutes, sharingNear } from "./api.js";
 import { drawItin, drawPins, fit, locate, map, nearbyStops, routeLayer } from "./map.js";
-import { collectAlerts, dayLabel, decodePolyline, delayMin, esc, fmtDay, fmtDist, fmtDur, fmtTime, itinAlerts, legAlerts, minutesUntil, modeName, motisSteps, placeParam, prettyName, sameDay, stopModes } from "./util.js";
+import { MODE_LABEL, MODE_TITLE, collectAlerts, dayLabel, decodePolyline, delayMin, esc, fmtDay, fmtDist, fmtDur, fmtTime, isTransitLeg, itinAlerts, legAlerts, minutesUntil, modeName, motisSteps, placeParam, prettyName, rentalLabel, sameDay, shareQuery, stopModes, streetKind, ticketInfo } from "./util.js";
 import { blurInputs, chosenTime, favs, hideSugg, isFav, sameTrip, setPlace, syncInputs, toggleFav, toggleTrip, trips } from "./places.js";
-import { $, ICONS, TRASH, WARN_ICON, alertsHtml, applyTheme, cssVar, errorBox, getTheme, legChip, loading, modeIcon, pushCurrent, view } from "./ui.js";
+import { $, ICONS, TRASH, WARN_ICON, alertsHtml, applyTheme, cssVar, errorBox, getTheme, legChip, loading, modeIcon, pushCurrent, toast, view } from "./ui.js";
 import { CFG, state, store } from "./state.js";
 
 // Schermata iniziale divisa in schede: Recenti, Viaggi salvati, Preferiti, Info
 const TABS = [["recent", "Recenti"], ["trips", "Viaggi"], ["fav", "Preferiti"], ["info", "Info"]];
-const MODE_LABEL = { TRANSIT: "Mezzi", CAR: "Auto", WALK: "A piedi" };
 const row = (attrs, icon, title, sub, del) => `<div class="rowitem"><button class="recent" ${attrs}><span class="sicon">${icon}</span><span class="stext"><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</span></button>${del ? `<button class="iconbtn" ${del} aria-label="Elimina">${TRASH}</button>` : ""}</div>`;
 export function homeView(tab) {
   tab = TABS.some(([k]) => k === tab) ? tab : (store("homeTab") || "recent");
@@ -33,8 +32,10 @@ export function homeView(tab) {
     const th = getTheme();
     body = `<div class="label" id="lblTema" style="margin-top:4px">Tema</div>
       <div class="tabs" role="radiogroup" aria-labelledby="lblTema" style="margin-bottom:14px">${[["auto", "Automatico"], ["light", "Chiaro"], ["dark", "Scuro"]].map(([k, l]) => `<button type="button" role="radio" aria-checked="${k === th}" data-theme-set="${k}">${l}</button>`).join("")}</div>
+      <div class="label">Percorsi</div>
+      <label class="switch"><input type="checkbox" id="optSharing" ${store("sharing") !== false ? "checked" : ""}><span>Bici e monopattini in sharing<small>Nei percorsi e sulla mappa, dove il servizio pubblica i dati</small></span></label>
       <div class="label">Dati e privacy</div>
-      <p class="small" style="margin:0 0 8px">Orari ufficiali GTFS di Autolinee Toscane, Trenitalia e tramvia tramite Transitous. Mappa e strade da OpenStreetMap, percorsi in auto e a piedi da OSRM (FOSSGIS).</p>
+      <p class="small" style="margin:0 0 8px">Orari ufficiali GTFS di Autolinee Toscane, Trenitalia e tramvia tramite Transitous. Mappa e strade da OpenStreetMap, percorsi in auto, a piedi e in bici da OSRM (FOSSGIS).</p>
       <p class="small muted" style="margin:0 0 8px">I bus AT non hanno dati in tempo reale: vedi gli orari programmati. I tempi in auto non tengono conto del traffico.</p>
       <p class="small muted" style="margin:0 0 8px">Nessun account, nessuna pubblicità, nessun tracciamento. Cronologia, preferiti e viaggi salvati restano solo su questo telefono.</p>
       <p class="small" style="margin:0 0 8px"><a href="privacy.html" style="color:var(--accent);font-weight:700">Privacy: quali dati usa Girovia e a chi li invia</a></p>
@@ -43,6 +44,7 @@ export function homeView(tab) {
   const tabs = `<div class="tabs" role="tablist" aria-label="Sezioni">${TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === tab}" data-tab="${k}">${l}</button>`).join("")}</div>`;
   view("Dove vuoi andare?", tabs + `<div class="tabpanel" role="tabpanel">${body}</div>`, { root: true, level: state.viewKind === "home" ? null : 0, kind: "home", bind: (root) => {
     root.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => homeView(b.dataset.tab));
+    const os = root.querySelector("#optSharing"); if (os) os.onchange = () => { store("sharing", os.checked); toast(os.checked ? "Sharing attivo" : "Sharing disattivato"); };
     root.querySelectorAll("[data-theme-set]").forEach((b) => b.onclick = () => {
       applyTheme(b.dataset.themeSet);
       root.querySelectorAll("[data-theme-set]").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
@@ -89,13 +91,21 @@ async function search(cursor) {
   try {
     if (state.mode === "TRANSIT") {
       const t = chosenTime();
-      const plan = await motis("plan", {
+      const q = {
         fromPlace: placeParam(from), toPlace: placeParam(to),
         time: cursor ? undefined : t.time, arriveBy: t.arriveBy || undefined, pageCursor: cursor,
         transitModes: "TRANSIT", directModes: "WALK", preTransitModes: "WALK", postTransitModes: "WALK",
         maxPreTransitTime: 1200, maxPostTransitTime: 1200, maxDirectTime: 3600,
         numItineraries: 5, language: "it", detailedTransfers: true
-      }, ctl.signal);
+      };
+      // Bici e monopattini in sharing: solo se l'opzione è attiva e nella zona c'è un servizio con dati
+      const sharing = store("sharing") !== false && (await sharingNear(from, ctl.signal) || await sharingNear(to, ctl.signal));
+      let plan;
+      if (sharing) {
+        try { plan = await motis("plan", { ...q, directModes: "WALK,RENTAL", preTransitModes: "WALK,RENTAL", postTransitModes: "WALK,RENTAL" }, ctl.signal); }
+        catch (e) { if (e.name === "AbortError" || e.kind) throw e; } // se il servizio rifiuta lo sharing si riprova senza
+      }
+      if (!plan) plan = await motis("plan", q, ctl.signal);
       if (seq !== searchSeq) return;
       const its = (plan.itineraries || []).map((x) => ({ kind: "transit", ...x }));
       const direct = (plan.direct || []).map((x) => ({ kind: "transit", direct: true, ...x }));
@@ -121,7 +131,7 @@ function itinCard(it, i) {
       <div class="meta">${it.via ? `<span>via ${esc(it.via)}</span>` : ""}<span>Arrivo verso le ${fmtTime(it.endTime)}</span>${it.mode === "CAR" ? "<span>senza traffico</span>" : ""}</div></button>`;
   }
   const legs = it.legs || [];
-  const firstT = legs.find((l) => l.mode !== "WALK");
+  const firstT = legs.find(isTransitLeg);
   const dl = firstT ? delayMin(firstT.startTime, firstT.scheduledStartTime) : 0;
   const walkM = legs.filter((l) => l.mode === "WALK").reduce((a, l) => a + l.duration, 0);
   const chain = legs.filter((l) => !(l.mode === "WALK" && l.duration < 60 && legs.length > 1)).map(legChip).join('<span class="sep">›</span>');
@@ -139,20 +149,21 @@ function itinCard(it, i) {
 export function showResults() {
   const P = state.lastPlan;
   const all = P.items.concat(P.direct.filter((d) => d.duration <= 40 * 60));
-  const title = P.mode === "TRANSIT" ? `${esc(state.to.name)}` : (P.mode === "CAR" ? "In auto" : "A piedi");
+  const title = MODE_TITLE[P.mode] || "Percorso";
   let html;
   if (!all.length) {
     html = P.mode === "TRANSIT"
       ? errorBox("Nessun collegamento con i mezzi in questo orario. Prova un altro orario, oppure scegli come partenza o arrivo una fermata vicina.")
       : errorBox("Nessun percorso trovato.");
   } else {
-    html = `<div class="row" style="margin-bottom:8px"><button class="btn small" data-save-trip aria-pressed="${trips().some(sameTrip)}">${trips().some(sameTrip) ? "★ Viaggio salvato" : "☆ Salva viaggio"}</button></div><div class="list">${all.map(itinCard).join("")}</div>` +
+    html = `<div class="row" style="margin-bottom:8px"><button class="btn small" data-save-trip aria-pressed="${trips().some(sameTrip)}">${trips().some(sameTrip) ? "★ Viaggio salvato" : "☆ Salva viaggio"}</button><button class="btn small" data-share>${SHARE_ICON} Condividi</button></div><div class="list">${all.map(itinCard).join("")}</div>` +
       (P.mode === "TRANSIT" && state.nextCursor ? '<div style="margin-top:10px"><button class="btn wide" data-more>Mostra partenze successive</button></div>' : "");
   }
   view(P.mode === "TRANSIT" ? "Verso " + state.to.name : title, html, { root: true, level: 1,
     draw: () => { routeLayer.clearLayers(); if (all[0]) drawItin(all[0], true); },
     bind: (root) => {
       root.querySelectorAll("[data-it]").forEach((b) => b.onclick = () => showItin(all[+b.dataset.it]));
+      const sh = root.querySelector("[data-share]"); if (sh) sh.onclick = shareTrip;
       const sv = root.querySelector("[data-save-trip]");
       if (sv) sv.onclick = () => { const on = toggleTrip(); sv.textContent = on ? "★ Viaggio salvato" : "☆ Salva viaggio"; sv.setAttribute("aria-pressed", String(on)); };
       const more = root.querySelector("[data-more]"); if (more) more.onclick = () => { more.disabled = true; more.textContent = "Carico…"; search(state.nextCursor); };
@@ -166,7 +177,7 @@ export function showItin(it) {
     html = `<div class="meta" style="margin-bottom:8px"><span><b>${fmtDur(it.duration)}</b></span><span>${fmtDist(it.distance)}</span>${it.mode === "CAR" ? "<span>tempo senza traffico</span>" : ""}</div>
       <button class="btn primary wide" data-nav style="margin:4px 0 12px">Avvia navigazione</button>
       <ol class="steps">${it.steps.map((s) => `<li><span>${esc(s.text)}</span><span>${s.distance >= 10 ? fmtDist(s.distance) : ""}</span></li>`).join("")}</ol>`;
-    view(it.mode === "CAR" ? "In auto · " + fmtDur(it.duration) : "A piedi · " + fmtDur(it.duration), html, { push: true, level: 1, draw: () => drawItin(it), bind: (root) => {
+    view(`${MODE_TITLE[it.mode] || "Percorso"} · ${fmtDur(it.duration)}`, html, { push: true, level: 1, draw: () => drawItin(it), bind: (root) => {
       root.querySelector("[data-nav]").onclick = () => startRoadNav(it);
     } });
     return;
@@ -174,20 +185,28 @@ export function showItin(it) {
   const legs = it.legs || [];
   html += '<button class="btn primary wide" data-follow style="margin:4px 0 12px">Segui il viaggio</button><div class="tl">';
   legs.forEach((l, i) => {
-    const isT = l.mode !== "WALK" && l.mode !== "CAR";
-    const col = isT ? (l.routeColor ? "#" + l.routeColor : "var(--transit)") : "var(--walk)";
+    const isT = isTransitLeg(l), kind = streetKind(l);
+    const col = isT ? (l.routeColor ? "#" + l.routeColor : "var(--transit)") : (kind === "WALK" ? "var(--walk)" : (kind === "CAR" ? "var(--car)" : "var(--bike)"));
     const d = delayMin(l.startTime, l.scheduledStartTime);
     const timeCell = (iso, sched) => { const dd = delayMin(iso, sched); return `${fmtTime(iso)}${dd > 0 ? `<small class="late">+${dd}</small>` : (l.realTime && isT ? '<small class="rt">live</small>' : "")}`; };
     html += `<div class="stop" style="--c:${col}"><div class="t">${timeCell(l.startTime, l.scheduledStartTime)}</div><div class="node"></div><div class="n"><b>${esc(i === 0 && !isT && state.from ? state.from.name : l.from.name)}</b>${l.from.track ? `<span class="small muted">Binario ${esc(l.from.track)}</span>` : ""}</div></div>`;
     html += `<div class="seg" style="--c:${col}"><div></div><div class="bar ${isT ? "" : "dash"}"></div><div class="body">`;
     if (!isT) {
-      html += `<div class="muted">${ICONS.WALK.replace("<svg", '<svg width="16" height="16" style="vertical-align:-3px"')} A piedi ${fmtDur(l.duration)}${l.distance ? " · " + fmtDist(l.distance) : ""}</div>`;
+      const icon = (kind === "SCOOTER" ? ICONS.SCOOTER : (kind === "BIKE" ? ICONS.BIKE : ICONS.WALK)).replace("<svg", '<svg width="16" height="16" style="vertical-align:-3px" aria-hidden="true"');
+      if (l.mode === "RENTAL") {
+        const r = l.rental || {}, what = rentalLabel(r);
+        const url = [r.rentalUriWeb, r.url].find((u) => typeof u === "string" && /^https:\/\//.test(u));
+        html += `<div>${icon} <b>${esc(what.charAt(0).toUpperCase() + what.slice(1))}</b> · ${fmtDur(l.duration)}${l.distance ? " · " + fmtDist(l.distance) : ""}</div>
+          <div class="small muted">${r.fromStationName ? "Ritiro: " + esc(r.fromStationName) : "Ritiro dove trovi il mezzo"}${r.toStationName ? " · Riconsegna: " + esc(r.toStationName) : ""}</div>
+          ${url ? `<div><a class="btn small" href="${esc(url)}" target="_blank" rel="noopener">Apri il servizio di sharing</a></div>` : ""}`;
+      } else html += `<div class="muted">${icon} ${kind === "CAR" ? "In auto" : (kind === "BIKE" ? "In bici" : "A piedi")} ${fmtDur(l.duration)}${l.distance ? " · " + fmtDist(l.distance) : ""}</div>`;
       const st = motisSteps(l.steps).filter((s) => s.distance > 5);
       if (st.length > 1) html += `<details><summary>Indicazioni</summary><ol class="steps">${st.map((s) => `<li><span>${esc(s.text)}</span><span>${fmtDist(s.distance)}</span></li>`).join("")}</ol></details>`;
     } else {
       const inter = l.intermediateStops || [];
       html += `<div>${legChip(l)} <b>→ ${esc(l.headsign || (l.tripTo && l.tripTo.name) || "")}</b></div>
         ${alertsHtml(legAlerts(l))}
+        ${ticketHtml(l)}
         <div class="small muted">${esc(l.agencyName || modeName(l.mode))}${l.cancelled ? ' · <span class="cancel">Corsa soppressa</span>' : ""}${l.realTime ? (d > 0 ? ` · <span class="late">ritardo ${d} min</span>` : ' · <span class="rt">dati in tempo reale</span>') : " · orario programmato"}</div>
         ${inter.length ? `<details><summary>${inter.length + 1} fermate · ${fmtDur(l.duration)}</summary><div class="mini">${inter.map((s) => `<div><span>${fmtTime(s.arrival || s.departure)}</span><span>${esc(s.name)}</span></div>`).join("")}</div></details>` : `<div class="small muted">${fmtDur(l.duration)} senza fermate intermedie</div>`}
         ${l.tripId ? `<div><button class="btn small" data-trip="${i}">Vedi tutta la corsa</button></div>` : ""}`;
@@ -235,6 +254,49 @@ async function showTrip(tripId, highlightStopId) {
 }
 
 const CHECK_ICON = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+// ---------- Biglietti ----------
+function ticketHtml(l) {
+  const t = ticketInfo(l);
+  if (!t) return "";
+  return `<div class="ticket"><a href="${esc(t.url)}" target="_blank" rel="noopener">${TICKET_ICON}${esc(t.label)}</a>${t.note ? `<span class="small muted">${esc(t.note)}</span>` : ""}</div>`;
+}
+const TICKET_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 8V6h18v2a2.5 2.5 0 000 5v2H3v-2a2.5 2.5 0 000-5z"/><path d="M14 6v9" stroke-dasharray="2 2"/></svg>';
+const SHARE_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>';
+
+// ---------- Condividere un percorso ----------
+export function shareUrl() {
+  const t = chosenTime(), fixed = $("#whenMode").value !== "now";
+  return (CFG.shareBase || location.href.split(/[?#]/)[0]) + "?" + shareQuery({ from: state.from, to: state.to, mode: state.mode, time: fixed && state.mode === "TRANSIT" ? t.time : null, arriveBy: t.arriveBy });
+}
+async function shareTrip() {
+  const url = shareUrl(), title = `${state.from.name} → ${state.to.name}`;
+  const sh = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+  try {
+    if (sh && sh.share) { await sh.share({ title, text: `Percorso con Girovia: ${title}`, url, dialogTitle: "Condividi il percorso" }); return; }
+    if (navigator.share) { await navigator.share({ title, text: `Percorso con Girovia: ${title}`, url }); return; }
+  } catch (e) { if (e && (e.name === "AbortError" || /cancel/i.test(e.message || ""))) return; }
+  try { await navigator.clipboard.writeText(url); toast("Link del percorso copiato"); }
+  catch (e) { toast("Copia non riuscita: " + url); }
+}
+// Apre un percorso ricevuto con un link condiviso
+export function openShared(s) {
+  state.from = s.from; state.to = s.to; syncInputs(); drawPins();
+  if (s.time && s.mode === "TRANSIT") {
+    $("#whenMode").value = s.arriveBy ? "arrive" : "depart";
+    const d = new Date(s.time); $("#whenTime").value = new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); $("#whenTime").hidden = false;
+  }
+  const mb = document.querySelector(`[data-mode="${s.mode}"]`);
+  if (mb && state.mode !== s.mode) mb.click(); else search();
+}
+// Scorciatoie "Vai a Casa" / "Vai al Lavoro" (icona dell'app tenuta premuta)
+export function goFav(kind) {
+  const k = kind === "lavoro" || kind === "work" ? "work" : "home";
+  const place = favs()[k];
+  if (!place) { homeView("fav"); toast(k === "home" ? "Imposta prima Casa: toccala qui sotto" : "Imposta prima il Lavoro: toccalo qui sotto"); return; }
+  state.from = null; setPlace("to", { ...place });
+  locate("from");
+}
 
 // ---------- Fermate visibili sulla mappa (elenco accessibile) ----------
 export function showNearbyStops() {

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_home_short">Casa</string>
+    <string name="shortcut_home_long">Vai a Casa</string>
+    <string name="shortcut_work_short">Lavoro</string>
+    <string name="shortcut_work_long">Vai al Lavoro</string>
+</resources>

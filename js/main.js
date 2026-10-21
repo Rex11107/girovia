@@ -3,9 +3,9 @@
    Avvio: collega i moduli, aggiornamento automatico, rete, tasto Indietro. */
 
 import { initNav, refreshTrip, reroute, speak, stopNav, summary } from "./nav.js";
-import { homeView, showDepartures, showItin, showNearbyStops, showResults } from "./views.js";
+import { goFav, homeView, openShared, showDepartures, showItin, showNearbyStops, showResults } from "./views.js";
 import { drawPins, initMap, locate, map, routeLayer } from "./map.js";
-import { decodePolyline, fmtDist, fmtDur, makeLine, osrmText, prettyName, projectOn, spokenDist } from "./util.js";
+import { decodePolyline, fmtDist, fmtDur, makeLine, osrmText, parseShare, prettyName, projectOn, spokenDist } from "./util.js";
 import { blurInputs, hideSugg, initPlaces, syncInputs } from "./places.js";
 import { $, SNAP, initSheet, setSheet, toast, view } from "./ui.js";
 import { NAV, state, store } from "./state.js";
@@ -53,9 +53,26 @@ homeView();
 if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name: "geolocation" }).then((p) => { if (p.state === "granted") locate(); }).catch(() => {});
 window.addEventListener("resize", () => { const h = $("#sheet").getBoundingClientRect().height, s = SNAP(); let best = 0; s.forEach((v, i) => { if (Math.abs(v - h) < Math.abs(s[best] - h)) best = i; }); setSheet(best); });
 
+// Link condiviso (?da=…&a=…) o scorciatoia (?vai=casa / ?vai=lavoro), poi l'indirizzo torna pulito
+const shared = parseShare(location.search);
+const vai = new URLSearchParams(location.search).get("vai");
+if (shared) openShared(shared);
+else if (vai) goFav(vai);
+if (location.search && (shared || vai)) history.replaceState(null, "", location.pathname);
+
+// App Android: scorciatoie dell'icona (girovia://vai/casa) e link aperti con l'app
+function handleAppUrl(url) {
+  const m = /^girovia:\/\/vai\/(casa|lavoro)/i.exec(url || "");
+  if (m) { goFav(m[1].toLowerCase()); return; }
+  const q = (url || "").split("?")[1];
+  const s = q && parseShare("?" + q); if (s) openShared(s);
+}
+
 // App Android: il tasto Indietro del telefono torna alla schermata precedente invece di chiudere l'app
 const capApp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
 if (capApp && capApp.addListener) {
+  if (capApp.getLaunchUrl) capApp.getLaunchUrl().then((r) => { if (r && r.url) handleAppUrl(r.url); }).catch(() => {});
+  capApp.addListener("appUrlOpen", (e) => handleAppUrl(e && e.url));
   capApp.addListener("backButton", () => {
     if (NAV.active) { stopNav(); return; }
     if (!$("#sugg").hidden) { hideSugg(); blurInputs(); return; }
