@@ -4,9 +4,13 @@ module.exports = [
   { ignores: ["node_modules/**", "test-results/**", "playwright-report/**", "_site/**", "vendor/**", "android/**", "www/**"] },
   js.configs.recommended,
   {
-    files: ["app.js", "config.js"],
-    languageOptions: { ecmaVersion: 2022, sourceType: "script", globals: { ...globals.browser, L: "readonly" } },
+    files: ["js/**/*.js"],
+    languageOptions: { ecmaVersion: 2022, sourceType: "module", globals: { ...globals.browser, L: "readonly" } },
     rules: { "no-unused-vars": ["error", { caughtErrors: "none" }], "no-empty": ["error", { allowEmptyCatch: true }], "eqeqeq": ["error", "smart"], "no-implicit-globals": "error" }
+  },
+  {
+    files: ["config.js", "theme.js"],
+    languageOptions: { ecmaVersion: 2022, sourceType: "script", globals: { ...globals.browser } }
   },
   {
     files: ["sw.js"],

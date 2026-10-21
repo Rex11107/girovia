@@ -7,7 +7,8 @@ const APP = "girovia-app-" + VERSION;
 const TILES = "girovia-tiles";
 const MAX_TILES = 1500;
 const SHELL = [
-  "./", "index.html", "app.js", "config.js", "privacy.html", "manifest.webmanifest",
+  "./", "index.html", "styles.css", "theme.js", "config.js", "privacy.html", "manifest.webmanifest",
+  "js/main.js", "js/util.js", "js/state.js", "js/ui.js", "js/api.js", "js/map.js", "js/places.js", "js/views.js", "js/nav.js",
   "icon.svg", "icon-192.png", "icon-512.png",
   "vendor/leaflet/leaflet.js", "vendor/leaflet/leaflet.css",
   "fonts/atkinson-hyperlegible-latin-400-normal.woff2", "fonts/atkinson-hyperlegible-latin-700-normal.woff2",
