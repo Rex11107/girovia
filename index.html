@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Girovia</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://api.transitous.org https://routing.openstreetmap.de; worker-src 'self'; manifest-src 'self'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'">
+<script src="theme.js"></script>
+<meta name="description" content="Mezzi pubblici, auto e piedi per Firenze e la Toscana. Senza pubblicità e senza tracciamento.">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11171c" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Girovia">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<section id="map" aria-label="Mappa"></section>
+
+<div id="top">
+  <form id="search" class="card" autocomplete="off">
+    <div class="fields">
+      <div class="dots" aria-hidden="true"><i></i><b></b><i></i></div>
+      <div class="field"><input id="from" type="search" placeholder="Partenza" aria-label="Partenza" enterkeyhint="next"><button type="button" class="clear" data-clear="from" aria-label="Cancella partenza" hidden>✕</button></div>
+      <button type="button" id="swap" aria-label="Inverti partenza e arrivo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3"/></svg></button>
+      <div class="field"><input id="to" type="search" placeholder="Arrivo" aria-label="Arrivo" enterkeyhint="search"><button type="button" class="clear" data-clear="to" aria-label="Cancella arrivo" hidden>✕</button></div>
+    </div>
+    <div class="row">
+      <div class="modes" role="group" aria-label="Mezzo">
+        <button type="button" data-mode="TRANSIT" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="15" rx="3"/><path d="M5 11h14M8 21l1-3M16 21l-1-3"/><circle cx="8.5" cy="14.5" r=".8" fill="currentColor"/><circle cx="15.5" cy="14.5" r=".8" fill="currentColor"/></svg>Mezzi</button>
+        <button type="button" data-mode="CAR" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v-4l2-5h12l2 5v4z"/><path d="M4 12h16"/><circle cx="7.5" cy="16.5" r="1.8"/><circle cx="16.5" cy="16.5" r="1.8"/></svg>Auto</button>
+        <button type="button" data-mode="WALK" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="13" cy="4" r="2"/><path d="M11 21l2-6-3-3 1-5 4 3 3 1M10 12l-3 2"/></svg>A piedi</button>
+        <button type="button" data-mode="BIKE" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-7h6l2 7M10 9l3 7h-3M14.5 6H17"/></svg>Bici</button>
+      </div>
+      <div class="when">
+        <select id="whenMode" aria-label="Quando">
+          <option value="now">Parti ora</option>
+          <option value="depart">Parti alle</option>
+          <option value="arrive">Arriva entro</option>
+        </select>
+        <input id="whenTime" type="datetime-local" aria-label="Data e ora" hidden>
+      </div>
+    </div>
+    <button type="submit" hidden>Cerca</button>
+  </form>
+  <div id="sugg" class="card" aria-live="polite" hidden></div>
+  <div id="net" class="netpill" role="status" hidden>Sei offline · la mappa mostra le zone già viste, orari e percorsi tornano con la rete</div>
+</div>
+
+<button id="stopsBtn" type="button" hidden>Fermate qui</button>
+<button id="locate" type="button" aria-label="La mia posizione"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+
+<section id="sheet" aria-label="Pannello">
+  <div id="handle" aria-hidden="true"><i></i></div>
+  <div id="sheetHead"><button id="back" type="button" aria-label="Indietro" hidden><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg></button><h2 id="sheetTitle">Dove vuoi andare?</h2></div>
+  <div id="sheetBody"></div>
+</section>
+
+
+<div id="nav" hidden><div class="navcard" role="status" aria-live="polite"><div id="navIcon"></div><div class="navtext"><div id="navDist"></div><div id="navInstr"></div><div id="navThen" class="small"></div></div></div></div>
+<div id="navBar" hidden>
+  <div id="navSummary"></div>
+  <div class="navbtns">
+    <button type="button" id="navCenter" aria-label="Torna alla mia posizione" hidden><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+    <button type="button" id="navVoice" aria-label="Voce"></button>
+    <button type="button" id="navStop">Fine</button>
+  </div>
+</div>
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="config.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
