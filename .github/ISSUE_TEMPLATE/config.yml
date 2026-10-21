@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Orari sbagliati nei dati ufficiali
+    url: https://transitous.org/sources/
+    about: Se l'orario è sbagliato anche sul sito dell'azienda, l'errore è nei dati GTFS pubblicati. Qui trovi le fonti.

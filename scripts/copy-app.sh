@@ -9,4 +9,6 @@ cp index.html styles.css theme.js config.js privacy.html sw.js manifest.webmanif
 mkdir -p "$DEST/js" && cp js/*.js "$DEST/js/"
 cp -r vendor fonts "$DEST/"
 sed -i "s/__BUILD__/${VER}/" "$DEST/sw.js"
-echo "App copiata in $DEST (versione $VER)"
+APPVER=$(node -p "require('./package.json').version")
+sed -i "s/__VERSION__/${APPVER}/" "$DEST/js/version.js"
+echo "App ${APPVER} copiata in $DEST (build $VER)"

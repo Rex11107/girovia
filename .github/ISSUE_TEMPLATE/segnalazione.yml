@@ -1,0 +1,39 @@
+name: Qualcosa non funziona
+description: Un errore, un orario sbagliato, un percorso strano
+labels: ["problema"]
+body:
+  - type: markdown
+    attributes:
+      value: Grazie! Più dettagli metti, più è facile capire. Non scrivere indirizzi di casa o dati personali.
+  - type: textarea
+    id: cosa
+    attributes:
+      label: Cosa è successo
+      description: Cosa hai fatto, cosa ti aspettavi, cosa hai visto invece.
+    validations:
+      required: true
+  - type: input
+    id: tratta
+    attributes:
+      label: Tratta o fermata
+      placeholder: "es. Firenze SMN → Pontassieve, mezzi, partenza ore 8"
+  - type: dropdown
+    id: dove
+    attributes:
+      label: Dove usi Girovia
+      options:
+        - App Android (APK)
+        - Sito nel browser del telefono
+        - Sito dal computer
+    validations:
+      required: true
+  - type: input
+    id: versione
+    attributes:
+      label: Versione
+      description: Scheda Info, in basso (es. Girovia 0.2.0)
+  - type: textarea
+    id: foto
+    attributes:
+      label: Screenshot
+      description: Trascina qui un'immagine, se ce l'hai.

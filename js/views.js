@@ -1,5 +1,6 @@
 // Schermate del pannello: iniziale, risultati, dettaglio, corsa intera, partenze.
 
+import { versionLabel } from "./version.js";
 import { startRoadNav, startTripNav } from "./nav.js";
 import { motis, roadRoutes, sharingNear } from "./api.js";
 import { drawItin, drawPins, fit, locate, map, nearbyStops, routeLayer } from "./map.js";
@@ -39,6 +40,7 @@ export function homeView(tab) {
       <p class="small muted" style="margin:0 0 8px">I bus AT non hanno dati in tempo reale: vedi gli orari programmati. I tempi in auto non tengono conto del traffico.</p>
       <p class="small muted" style="margin:0 0 8px">Nessun account, nessuna pubblicità, nessun tracciamento. Cronologia, preferiti e viaggi salvati restano solo su questo telefono.</p>
       <p class="small" style="margin:0 0 8px"><a href="privacy.html" style="color:var(--accent);font-weight:700">Privacy: quali dati usa Girovia e a chi li invia</a></p>
+      <p class="small muted" style="margin:0 0 8px">Girovia ${esc(versionLabel())} · <a href="https://github.com/Rex11107/girovia/blob/main/CHANGELOG.md" target="_blank" rel="noopener" style="color:var(--accent)">novità</a></p>
       ${CFG.contact ? `<p class="small muted" style="margin:0">Progetto e contatti: <a href="${esc(CFG.contact)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(CFG.contact.replace(/^https?:\/\//, ""))}</a></p>` : ""}`;
   }
   const tabs = `<div class="tabs" role="tablist" aria-label="Sezioni">${TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === tab}" data-tab="${k}">${l}</button>`).join("")}</div>`;

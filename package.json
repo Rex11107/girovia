@@ -1,7 +1,7 @@
 {
   "name": "girovia",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Mezzi pubblici, auto e piedi per Firenze e la Toscana",
   "license": "MIT",
   "scripts": {

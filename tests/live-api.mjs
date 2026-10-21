@@ -9,7 +9,7 @@ const HEADERS = {
   "User-Agent": "Girovia-CI/0.1 (+https://github.com/Rex11107/girovia)",
   "Referer": "https://rex11107.github.io/girovia/"
 };
-const VERSIONS = { plan: [6, 5, 4, 3, 2], trip: [6, 5, 4, 2], stoptimes: [6, 5, 4, 1], "map/stops": [6, 1], geocode: [1] };
+const VERSIONS = { rentals: [1], plan: [6, 5, 4, 3, 2], trip: [6, 5, 4, 2], stoptimes: [6, 5, 4, 1], "map/stops": [6, 1], geocode: [1] };
 const used = {};
 const lines = [];
 let failures = 0;
@@ -142,6 +142,28 @@ async function main() {
       ok(`${label}: ${a} → ${b}`, `${Math.round(r.duration / 60)} min, ${(r.distance / 1000).toFixed(1)} km, ${r.legs[0].steps.length} indicazioni, ${j.routes.length} alternative`);
     } catch (e) { fail(`${label}: ${a} → ${b}`, e.message); }
   }
+
+  log("\n## Bici (OSRM FOSSGIS)");
+  try {
+    const [a, b] = [PLACES["Firenze SMN"], PLACES["Sesto Fiorentino"]];
+    const res = await fetch(`${OSRM}/routed-bike/route/v1/driving/${a[1]},${a[0]};${b[1]},${b[0]}?overview=full&geometries=polyline6&steps=true`, { headers: HEADERS });
+    const j = await res.json();
+    if (j.code !== "Ok") throw new Error(j.code || res.status);
+    ok("Bici: Firenze SMN → Sesto Fiorentino", `${Math.round(j.routes[0].duration / 60)} min, ${(j.routes[0].distance / 1000).toFixed(1)} km`);
+  } catch (e) { fail("Bici", e.message); }
+
+  log("\n## Bici e monopattini in sharing");
+  try {
+    const r = await motis("rentals", { min: "43.70,11.15", max: "43.85,11.35", withProviders: true, withStations: true, withVehicles: true });
+    const names = (r.providers || []).map((x) => x.name);
+    ok("Sharing nell'area di Firenze", names.length ? `${names.join(", ")} · ${(r.stations || []).length} stazioni, ${(r.vehicles || []).length} mezzi` : "nessun servizio con dati (l'app non mostra nulla e cerca senza sharing)");
+  } catch (e) { fail("Sharing (rentals)", e.message); }
+  try {
+    const p = await motis("plan", { fromPlace: PLACES["Firenze SMN"].join(","), toPlace: PLACES["Sesto Fiorentino"].join(","), time,
+      transitModes: "TRANSIT", directModes: "WALK,RENTAL", preTransitModes: "WALK,RENTAL", postTransitModes: "WALK,RENTAL", numItineraries: 3, language: "it" });
+    const rentLegs = (p.itineraries || []).flatMap((it) => it.legs).filter((l) => l.mode === "RENTAL").length;
+    ok("Ricerca con sharing accettata dal servizio", `${(p.itineraries || []).length} soluzioni, ${rentLegs} tratte in sharing`);
+  } catch (e) { fail("Ricerca con sharing", e.message); }
 
   log(`\nVersioni API usate: ${Object.entries(used).map(([k, v]) => `${k} v${v}`).join(", ")}`);
   log(`\n**Esito: ${failures ? failures + " controlli falliti" : "tutto ok"}**`);

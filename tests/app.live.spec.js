@@ -20,6 +20,9 @@ test("Firenze SMN → Pontassieve con i mezzi", async ({ page }) => {
   await page.goto("/index.html");
   await page.waitForTimeout(1500);
   await page.screenshot({ path: `${SHOTS}/01-home.png` });
+  await page.click("[data-tab='info']");
+  await page.screenshot({ path: `${SHOTS}/01b-info.png` });
+  await page.click("[data-tab='recent']");
   await pick(page, "from", "Firenze Santa Maria Novella");
   await expect(page.locator("#sheetTitle")).not.toHaveText("Dove vuoi andare?", { timeout: 20000 });
   await page.waitForTimeout(1500);
@@ -67,6 +70,8 @@ test("fermate sulla mappa in centro", async ({ page }) => {
   await page.evaluate(() => window.__girovia.map.setView([43.7731, 11.2560], 17)); // zoom sul Duomo
   await page.waitForTimeout(4000);
   await page.screenshot({ path: `${SHOTS}/09-fermate-mappa.png` });
-  const n = await page.locator(".leaflet-interactive").count();
-  expect(n).toBeGreaterThan(0);
+  await expect(page.locator(".stopdot").first()).toBeVisible();
+  await page.click("#stopsBtn");
+  await expect(page.locator("[data-ns]").first()).toBeVisible();
+  await page.screenshot({ path: `${SHOTS}/10-fermate-qui.png` });
 });

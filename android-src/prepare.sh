@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Adatta il progetto Android generato da Capacitor: icone, avvio, permessi, versione.
-# Uso: android-src/prepare.sh <numero-versione>
+# Uso: android-src/prepare.sh <versionCode> [versionName]
 set -euo pipefail
-N="${1:?numero versione}"
+N="${1:?versionCode (numero crescente)}"
+NAME="${2:-$(node -p "require('./package.json').version")}"
 SRC="$(cd "$(dirname "$0")" && pwd)"
 APP=android/app
 RES=$APP/src/main/res
@@ -54,5 +55,5 @@ public class MainActivity extends BridgeActivity {
 JAVA
 
 # Versione: aumenta a ogni compilazione, così Android accetta l'aggiornamento
-sed -i -E "s/versionCode [0-9]+/versionCode $N/; s/versionName \"[^\"]*\"/versionName \"0.1.$N\"/" $APP/build.gradle
+sed -i -E "s/versionCode [0-9]+/versionCode $N/; s/versionName \"[^\"]*\"/versionName \"$NAME\"/" $APP/build.gradle
 grep -E "versionCode|versionName" $APP/build.gradle

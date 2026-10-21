@@ -1,0 +1,33 @@
+# Aggiornamenti automatici delle dipendenze, una volta a settimana, raggruppati per non riempire di pull request.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      capacitor:
+        patterns: ["@capacitor/*", "@capacitor-community/*"]
+        update-types: [minor, patch]
+      strumenti:
+        patterns: ["*"]
+        exclude-patterns: ["@capacitor/*", "@capacitor-community/*", "leaflet"]
+        update-types: [minor, patch]
+    ignore:
+      # Un salto di versione principale di Capacitor richiede lavoro sul progetto Android: si fa a mano
+      - dependency-name: "@capacitor/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@capacitor-community/*"
+        update-types: ["version-update:semver-major"]
+      # Leaflet è copiato in vendor/: si aggiorna a mano insieme ai file
+      - dependency-name: leaflet
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      azioni:
+        patterns: ["*"]
