@@ -38,7 +38,7 @@ test("Firenze SMN → Pontassieve con i mezzi", async ({ page }) => {
   const tripBtn = page.locator("[data-trip]").first();
   if (await tripBtn.count()) {
     await tripBtn.click();
-    await expect(page.locator(".mini div").first()).toBeVisible({ timeout: 30000 });
+    await expect(page.locator(".tripstops li").first()).toBeVisible({ timeout: 30000 });
     await page.waitForTimeout(2500);
     await page.screenshot({ path: `${SHOTS}/05-corsa.png` });
   }
