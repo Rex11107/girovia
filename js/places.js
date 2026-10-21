@@ -107,6 +107,7 @@ export function chosenTime() {
 }
 
 export function initPlaces() {
+  $("#search").addEventListener("submit", (e) => e.preventDefault());
   ["from", "to"].forEach((f) => {
     const input = $("#" + f);
     input.addEventListener("focus", () => { state.activeField = f; input.select(); if (input.value.trim().length < 2 || state[f]) showSuggDefaults(f); });

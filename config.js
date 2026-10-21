@@ -11,6 +11,10 @@ window.GIROVIA_CONFIG = {
   routingCar: "https://routing.openstreetmap.de/routed-car",
   routingFoot: "https://routing.openstreetmap.de/routed-foot",
 
+  // Sicurezza: index.html ha una Content-Security-Policy. Se cambi "transitous" o i
+  // server di routing qui sotto, aggiungi il nuovo indirizzo anche in connect-src.
+  // Le tile (immagini) possono arrivare da qualsiasi indirizzo https.
+
   // Mappa: fornitori di tile in ordine di preferenza. Se il primo smette di rispondere
   // (molte tile in errore), l'app passa da sola al successivo.
   // La policy di tile.openstreetmap.org chiede un uso moderato: per un uso intenso metti

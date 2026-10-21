@@ -1,11 +1,26 @@
 // Pannello inferiore, icone e piccoli elementi di interfaccia.
 
-import { state } from "./state.js";
+import { state, store } from "./state.js";
 import { routeLayer } from "./map.js";
 import { CAUSE, esc, modeName } from "./util.js";
 
 export const $ = (s, r = document) => r.querySelector(s);
 export const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// Tema: "auto" segue il telefono, oppure chiaro o scuro fisso (theme.js lo applica già all'avvio)
+export function getTheme() { const t = store("theme"); return t === "light" || t === "dark" ? t : "auto"; }
+export function applyTheme(t) {
+  if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+  else document.documentElement.removeAttribute("data-theme");
+  store("theme", t === "light" || t === "dark" ? t : null);
+  const bg = cssVar("--bg");
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", bg));
+  // App Android: icone della barra di stato leggibili sul nuovo sfondo
+  const dark = t === "dark" || (t === "auto" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const C = window.Capacitor, sb = C && C.Plugins && C.Plugins.SystemBars;
+  if (sb && sb.setStyle) sb.setStyle({ style: t === "auto" ? "DEFAULT" : (dark ? "DARK" : "LIGHT") }).catch(() => {});
+  if (state.currentDraw) state.currentDraw(); // i colori dei percorsi sulla mappa seguono il tema
+}
 
 export function toast(msg) {
   const t = document.createElement("div"); t.className = "toast"; t.textContent = msg; t.setAttribute("role", "status");

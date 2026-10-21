@@ -188,7 +188,7 @@ body.navigating .netpill{display:none}
 /* Schede della schermata iniziale */
 .tabs{display:flex;gap:4px;background:var(--surface-2);border-radius:12px;padding:3px;margin:0 0 8px}
 .tabs button{flex:1;border:0;background:none;border-radius:9px;height:34px;font-weight:700;color:var(--muted);font-size:14px;white-space:nowrap}
-.tabs button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.tabs button[aria-selected="true"],.tabs button[aria-checked="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .rowitem{display:flex;align-items:center;gap:4px;border-bottom:1px solid var(--line)}
 .rowitem .recent{border-bottom:0;flex:1;min-width:0}
 .iconbtn{flex:0 0 40px;height:40px;border:0;background:none;border-radius:10px;color:var(--muted);display:grid;place-items:center}

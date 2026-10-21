@@ -5,7 +5,7 @@ import { motis, roadRoutes } from "./api.js";
 import { drawItin, drawPins, fit, locate, map, routeLayer } from "./map.js";
 import { collectAlerts, dayLabel, decodePolyline, delayMin, esc, fmtDay, fmtDist, fmtDur, fmtTime, itinAlerts, legAlerts, minutesUntil, modeName, motisSteps, placeParam, prettyName, sameDay } from "./util.js";
 import { blurInputs, chosenTime, favs, hideSugg, isFav, sameTrip, setPlace, syncInputs, toggleFav, toggleTrip, trips } from "./places.js";
-import { $, ICONS, TRASH, WARN_ICON, alertsHtml, cssVar, errorBox, legChip, loading, modeIcon, pushCurrent, view } from "./ui.js";
+import { $, ICONS, TRASH, WARN_ICON, alertsHtml, applyTheme, cssVar, errorBox, getTheme, legChip, loading, modeIcon, pushCurrent, view } from "./ui.js";
 import { CFG, state, store } from "./state.js";
 
 // Schermata iniziale divisa in schede: Recenti, Viaggi salvati, Preferiti, Info
@@ -30,7 +30,11 @@ export function homeView(tab) {
       f.list.map((x, i) => row(`data-f="${i}"`, ICONS.FAV, prettyName(x.name), x.sub, `data-del-f="${i}"`)).join("") +
       (f.list.length ? "" : '<p class="empty small">Aggiungi altri luoghi con ☆ dal popup sulla mappa o dalla pagina di una fermata.</p>');
   } else {
-    body = `<p class="small" style="margin:0 0 8px">Orari ufficiali GTFS di Autolinee Toscane, Trenitalia e tramvia tramite Transitous. Mappa e strade da OpenStreetMap, percorsi in auto e a piedi da OSRM (FOSSGIS).</p>
+    const th = getTheme();
+    body = `<div class="label" id="lblTema" style="margin-top:4px">Tema</div>
+      <div class="tabs" role="radiogroup" aria-labelledby="lblTema" style="margin-bottom:14px">${[["auto", "Automatico"], ["light", "Chiaro"], ["dark", "Scuro"]].map(([k, l]) => `<button type="button" role="radio" aria-checked="${k === th}" data-theme-set="${k}">${l}</button>`).join("")}</div>
+      <div class="label">Dati e privacy</div>
+      <p class="small" style="margin:0 0 8px">Orari ufficiali GTFS di Autolinee Toscane, Trenitalia e tramvia tramite Transitous. Mappa e strade da OpenStreetMap, percorsi in auto e a piedi da OSRM (FOSSGIS).</p>
       <p class="small muted" style="margin:0 0 8px">I bus AT non hanno dati in tempo reale: vedi gli orari programmati. I tempi in auto non tengono conto del traffico.</p>
       <p class="small muted" style="margin:0 0 8px">Nessun account, nessuna pubblicità, nessun tracciamento. Cronologia, preferiti e viaggi salvati restano solo su questo telefono.</p>
       <p class="small" style="margin:0 0 8px"><a href="privacy.html" style="color:var(--accent);font-weight:700">Privacy: quali dati usa Girovia e a chi li invia</a></p>
@@ -39,6 +43,10 @@ export function homeView(tab) {
   const tabs = `<div class="tabs" role="tablist" aria-label="Sezioni">${TABS.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === tab}" data-tab="${k}">${l}</button>`).join("")}</div>`;
   view("Dove vuoi andare?", tabs + `<div class="tabpanel" role="tabpanel">${body}</div>`, { root: true, level: state.viewKind === "home" ? null : 0, kind: "home", bind: (root) => {
     root.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => homeView(b.dataset.tab));
+    root.querySelectorAll("[data-theme-set]").forEach((b) => b.onclick = () => {
+      applyTheme(b.dataset.themeSet);
+      root.querySelectorAll("[data-theme-set]").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
+    });
     root.querySelectorAll("[data-r]").forEach((b) => b.onclick = () => {
       const r = { ...rec[+b.dataset.r], name: prettyName(rec[+b.dataset.r].name) };
       if (r.type === "STOP" && r.id && !state.from) { showDepartures(r); return; }

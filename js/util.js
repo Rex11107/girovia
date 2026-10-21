@@ -1,7 +1,7 @@
 // Funzioni pure: formattazione, nomi, geometria, testi delle indicazioni, avvisi.
 // Nessun accesso a pagina, rete o memoria: si provano anche con Node (tests/unit).
 
-const TZ = "Europe/Rome";
+export const TZ = "Europe/Rome";
 
 export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const fmtTime = (iso) => iso ? new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: TZ }).format(new Date(iso)) : "";
@@ -42,8 +42,8 @@ export function decodePolyline(str, precision) {
 
 // I dati GTFS di AT arrivano spesso TUTTI MAIUSCOLI: "SCALA SANTA MARIA NOVELLA" → "Scala Santa Maria Novella".
 // Le sigle restano maiuscole (SMN, FS, SS67, AT).
-const SMALL = new Set(["di", "de", "del", "dell", "della", "dello", "dei", "degli", "delle", "da", "dal", "dalla", "e", "ed", "in", "a", "al", "alla", "allo", "ai", "agli", "alle", "sul", "sulla", "per", "con", "tra", "fra"]);
-const KEEP = /^(SS|SR|SP|FS|SMN|AT|ATAF|GEST|RFI|TFT|II|III|IV|VI|VII|VIII|IX|XI|XII|XX|XXIV|XXV|A1|A11|FI-PI-LI)$/;
+export const SMALL = new Set(["di", "de", "del", "dell", "della", "dello", "dei", "degli", "delle", "da", "dal", "dalla", "e", "ed", "in", "a", "al", "alla", "allo", "ai", "agli", "alle", "sul", "sulla", "per", "con", "tra", "fra"]);
+export const KEEP = /^(SS|SR|SP|FS|SMN|AT|ATAF|GEST|RFI|TFT|II|III|IV|VI|VII|VIII|IX|XI|XII|XX|XXIV|XXV|A1|A11|FI-PI-LI)$/;
 export function prettyName(str) {
   if (typeof str !== "string" || !/[A-ZÀ-Ý]{3}/.test(str)) return str;
   if (str !== str.toUpperCase()) {
@@ -115,7 +115,7 @@ export function osrmItem(r, mode) {
   };
 }
 // Passi a piedi di Transitous: testo, posizione e tipo di svolta
-const MMOD = { HARD_LEFT: "sharp left", LEFT: "left", SLIGHTLY_LEFT: "slight left", CONTINUE: "straight", SLIGHTLY_RIGHT: "slight right", RIGHT: "right", HARD_RIGHT: "sharp right", UTURN_LEFT: "uturn", UTURN_RIGHT: "uturn" };
+export const MMOD = { HARD_LEFT: "sharp left", LEFT: "left", SLIGHTLY_LEFT: "slight left", CONTINUE: "straight", SLIGHTLY_RIGHT: "slight right", RIGHT: "right", HARD_RIGHT: "sharp right", UTURN_LEFT: "uturn", UTURN_RIGHT: "uturn" };
 export function motisSteps(steps) {
   return (steps || []).map((s, i) => {
     const g = s.polyline ? decodePolyline(s.polyline.points, s.polyline.precision) : [];
@@ -123,7 +123,7 @@ export function motisSteps(steps) {
   });
 }
 
-const DIR = { "left": "a sinistra", "right": "a destra", "slight left": "leggermente a sinistra", "slight right": "leggermente a destra", "sharp left": "decisamente a sinistra", "sharp right": "decisamente a destra", "straight": "dritto", "uturn": "inversione a U" };
+export const DIR = { "left": "a sinistra", "right": "a destra", "slight left": "leggermente a sinistra", "slight right": "leggermente a destra", "sharp left": "decisamente a sinistra", "sharp right": "decisamente a destra", "straight": "dritto", "uturn": "inversione a U" };
 export function osrmText(s, mode) {
   const m = s.maneuver || {}; const name = s.name || s.ref || ""; const mod = DIR[m.modifier] || "";
   const on = name ? ` su ${name}` : "";
@@ -144,14 +144,14 @@ export function osrmText(s, mode) {
       return `Gira ${mod}${on}`.trim();
   }
 }
-const MDIR = { DEPART: "Parti", HARD_LEFT: "Gira decisamente a sinistra", LEFT: "Gira a sinistra", SLIGHTLY_LEFT: "Tieni leggermente a sinistra", CONTINUE: "Continua", SLIGHTLY_RIGHT: "Tieni leggermente a destra", RIGHT: "Gira a destra", HARD_RIGHT: "Gira decisamente a destra", CIRCLE_CLOCKWISE: "Alla rotonda prosegui", CIRCLE_COUNTERCLOCKWISE: "Alla rotonda prosegui", STAIRS: "Prendi le scale", ELEVATOR: "Prendi l'ascensore", UTURN_LEFT: "Fai inversione", UTURN_RIGHT: "Fai inversione" };
-function motisStepText(s) { const base = MDIR[s.relativeDirection] || "Continua"; return s.streetName ? `${base} su ${s.streetName}` : base; }
+export const MDIR = { DEPART: "Parti", HARD_LEFT: "Gira decisamente a sinistra", LEFT: "Gira a sinistra", SLIGHTLY_LEFT: "Tieni leggermente a sinistra", CONTINUE: "Continua", SLIGHTLY_RIGHT: "Tieni leggermente a destra", RIGHT: "Gira a destra", HARD_RIGHT: "Gira decisamente a destra", CIRCLE_CLOCKWISE: "Alla rotonda prosegui", CIRCLE_COUNTERCLOCKWISE: "Alla rotonda prosegui", STAIRS: "Prendi le scale", ELEVATOR: "Prendi l'ascensore", UTURN_LEFT: "Fai inversione", UTURN_RIGHT: "Fai inversione" };
+export function motisStepText(s) { const base = MDIR[s.relativeDirection] || "Continua"; return s.streetName ? `${base} su ${s.streetName}` : base; }
 
 // ---------- Avvisi di servizio (scioperi, deviazioni…) ----------
 // Arrivano dalle aziende tramite Transitous, dentro tratte, fermate e partenze.
-const SEV = { SEVERE: 3, WARNING: 2, INFO: 1, UNKNOWN_SEVERITY: 1 };
+export const SEV = { SEVERE: 3, WARNING: 2, INFO: 1, UNKNOWN_SEVERITY: 1 };
 export const CAUSE = { STRIKE: "Sciopero", DEMONSTRATION: "Manifestazione", ACCIDENT: "Incidente", WEATHER: "Maltempo", MAINTENANCE: "Lavori", CONSTRUCTION: "Lavori", TECHNICAL_PROBLEM: "Guasto", POLICE_ACTIVITY: "Intervento delle forze dell'ordine", MEDICAL_EMERGENCY: "Emergenza sanitaria", SPECIAL_EVENT: "Evento", HOLIDAY: "Festività" };
-function activeAlert(a) {
+export function activeAlert(a) {
   const per = a.communicationPeriod || a.impactPeriod;
   if (!Array.isArray(per) || !per.length) return true;
   const now = Date.now();
@@ -172,8 +172,8 @@ export const itinAlerts = (it) => collectAlerts(...(it.legs || []).map(legAlerts
 export function modeName(m) { return ({ BUS: "Bus", COACH: "Pullman", TRAM: "Tram", RAIL: "Treno", REGIONAL_RAIL: "Regionale", REGIONAL_FAST_RAIL: "Reg. veloce", HIGHSPEED_RAIL: "Alta velocità", LONG_DISTANCE: "Intercity", SUBURBAN: "Treno", SUBWAY: "Metro", FERRY: "Traghetto", FUNICULAR: "Funicolare" })[m] || "Linea"; }
 export const lineName = (l) => l.routeShortName || l.displayName || l.tripShortName || modeName(l.mode);
 
-const RAD = Math.PI / 180, EARTH = 6371000;
-function distM(a, b) { const la = (a[0] + b[0]) / 2 * RAD; const x = (b[1] - a[1]) * RAD * Math.cos(la), y = (b[0] - a[0]) * RAD; return Math.sqrt(x * x + y * y) * EARTH; }
+export const RAD = Math.PI / 180, EARTH = 6371000;
+export function distM(a, b) { const la = (a[0] + b[0]) / 2 * RAD; const x = (b[1] - a[1]) * RAD * Math.cos(la), y = (b[0] - a[0]) * RAD; return Math.sqrt(x * x + y * y) * EARTH; }
 export function makeLine(pts) { const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + distM(pts[i - 1], pts[i])); return { pts, cum, len: cum[cum.length - 1] || 0 }; }
 // Punto più vicino sulla linea: distanza dalla linea e metri percorsi lungo di essa
 export function projectOn(line, p, hint) {

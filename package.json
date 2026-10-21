@@ -6,7 +6,8 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint . && html-validate index.html privacy.html",
-    "test": "playwright test --project=mock --project=offline",
+    "test": "npm run test:unit && playwright test --project=mock --project=offline",
+    "test:unit": "node --test tests/unit/*.test.mjs",
     "test:live": "node tests/live-api.mjs && playwright test --project=live",
     "serve": "http-server -p 4173 -s -c-1 ."
   },

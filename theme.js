@@ -4,5 +4,5 @@
     var t = localStorage.getItem("girovia.theme");
     t = t && JSON.parse(t);
     if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-  } catch (e) { /* memoria non disponibile: tema automatico */ }
+  } catch (err) { void err; /* memoria non disponibile: tema automatico */ }
 })();

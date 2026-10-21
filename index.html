@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Girovia</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://api.transitous.org https://routing.openstreetmap.de; worker-src 'self'; manifest-src 'self'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'">
+<script src="theme.js"></script>
 <meta name="description" content="Mezzi pubblici, auto e piedi per Firenze e la Toscana. Senza pubblicità e senza tracciamento.">
 <meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#11171c" media="(prefers-color-scheme: dark)">
@@ -20,7 +22,7 @@
 <section id="map" aria-label="Mappa"></section>
 
 <div id="top">
-  <form id="search" class="card" autocomplete="off" onsubmit="return false">
+  <form id="search" class="card" autocomplete="off">
     <div class="fields">
       <div class="dots" aria-hidden="true"><i></i><b></b><i></i></div>
       <div class="field"><input id="from" type="search" placeholder="Partenza" aria-label="Partenza" enterkeyhint="next"><button type="button" class="clear" data-clear="from" aria-label="Cancella partenza" hidden>✕</button></div>

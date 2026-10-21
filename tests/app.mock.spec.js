@@ -206,3 +206,33 @@ for (const scheme of ["light", "dark"]) {
     await page.screenshot({ path: `test-results/screens/dettaglio-${scheme}.png` });
   });
 }
+
+test("tema: scelta chiaro, scuro o automatico, ricordata al riavvio", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await setup(page);
+  await page.click("[data-tab='info']");
+  const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const light = await bg();
+  await page.click("[data-theme-set='dark']");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  expect(await bg()).not.toBe(light);
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark"); // applicato prima del codice dell'app
+  await page.click("[data-tab='info']");
+  await expect(page.locator("[data-theme-set='dark']")).toHaveAttribute("aria-checked", "true");
+  await page.click("[data-theme-set='auto']");
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme", /.+/);
+  expect(await bg()).toBe(light);
+});
+
+test("Content-Security-Policy: nessuna violazione durante l'uso", async ({ page }) => {
+  const violations = [];
+  page.on("console", (m) => { if (/Content Security Policy|Refused to/.test(m.text())) violations.push(m.text()); });
+  await setup(page);
+  await pick(page, "from", "Firenze");
+  await pick(page, "to", "Pontassieve");
+  await page.locator(".itin").first().click();
+  expect(violations).toEqual([]);
+  const csp = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute("content");
+  expect(csp).toContain("script-src 'self';");
+});

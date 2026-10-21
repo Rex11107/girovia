@@ -32,7 +32,12 @@ jobs:
           java-version: 21
       - run: npm ci
       - name: File dell'app web
-        run: scripts/copy-app.sh www "${{ github.sha }}"
+        run: |
+          scripts/copy-app.sh www "${{ github.sha }}"
+          # Nell'APK Capacitor può inserire nella pagina uno script inline per il collegamento
+          # con il telefono: la Content-Security-Policy lo deve permettere.
+          sed -i "s/script-src 'self';/script-src 'self' 'unsafe-inline';/" www/index.html
+          grep -q "script-src 'self' 'unsafe-inline';" www/index.html
       - name: Progetto Android
         run: |
           npx cap add android
