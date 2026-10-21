@@ -167,7 +167,7 @@
   map.on("click", async (e) => {
     hideSugg(); blurInputs();
     const p = { lat: e.latlng.lat, lon: e.latlng.lng, name: "Punto sulla mappa", type: "POINT" };
-    const pop = L.popup({ closeButton: false }).setLatLng(e.latlng).setContent(popupHtml(p)).openOn(map);
+    const pop = L.popup({ closeButton: true, autoPanPaddingTopLeft: [20, 230], autoPanPaddingBottomRight: [20, 40] }).setLatLng(e.latlng).setContent(popupHtml(p)).openOn(map);
     bindPopup(pop, p);
     try {
       const r = await motis("reverse-geocode", { place: `${p.lat},${p.lon}`, numResults: 1 });

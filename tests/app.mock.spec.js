@@ -171,6 +171,21 @@ test("errori chiari se un servizio non risponde", async ({ page }) => {
   await expect(page.locator("[data-retry]")).toBeVisible();
 });
 
+test("la nuvoletta sulla mappa si chiude con la X", async ({ page }) => {
+  await setup(page);
+  const box = await page.locator("#map").boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height * 0.45);
+  const pop = page.locator(".leaflet-popup");
+  await expect(pop).toBeVisible();
+  await expect(pop).toContainText("Parti da qui");
+  const x = page.locator(".leaflet-popup-close-button");
+  await expect(x).toBeVisible();
+  const r = await x.boundingBox();
+  expect(r.width).toBeGreaterThanOrEqual(36); // facile da toccare
+  await x.click();
+  await expect(pop).toHaveCount(0);
+});
+
 test("nessun collegamento: messaggio utile", async ({ page }) => {
   await setup(page, { emptyPlan: true });
   await pick(page, "from", "Firenze");
