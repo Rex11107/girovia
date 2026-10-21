@@ -625,6 +625,39 @@
   const MDIR = { DEPART: "Parti", HARD_LEFT: "Gira decisamente a sinistra", LEFT: "Gira a sinistra", SLIGHTLY_LEFT: "Tieni leggermente a sinistra", CONTINUE: "Continua", SLIGHTLY_RIGHT: "Tieni leggermente a destra", RIGHT: "Gira a destra", HARD_RIGHT: "Gira decisamente a destra", CIRCLE_CLOCKWISE: "Alla rotonda prosegui", CIRCLE_COUNTERCLOCKWISE: "Alla rotonda prosegui", STAIRS: "Prendi le scale", ELEVATOR: "Prendi l'ascensore", UTURN_LEFT: "Fai inversione", UTURN_RIGHT: "Fai inversione" };
   function motisStepText(s) { const base = MDIR[s.relativeDirection] || "Continua"; return s.streetName ? `${base} su ${s.streetName}` : base; }
 
+  // ---------- Avvisi di servizio (scioperi, deviazioni…) ----------
+  // Arrivano dalle aziende tramite Transitous, dentro tratte, fermate e partenze.
+  const SEV = { SEVERE: 3, WARNING: 2, INFO: 1, UNKNOWN_SEVERITY: 1 };
+  const CAUSE = { STRIKE: "Sciopero", DEMONSTRATION: "Manifestazione", ACCIDENT: "Incidente", WEATHER: "Maltempo", MAINTENANCE: "Lavori", CONSTRUCTION: "Lavori", TECHNICAL_PROBLEM: "Guasto", POLICE_ACTIVITY: "Intervento delle forze dell'ordine", MEDICAL_EMERGENCY: "Emergenza sanitaria", SPECIAL_EVENT: "Evento", HOLIDAY: "Festività" };
+  function activeAlert(a) {
+    const per = a.communicationPeriod || a.impactPeriod;
+    if (!Array.isArray(per) || !per.length) return true;
+    const now = Date.now();
+    return per.some((r) => (!r.start || new Date(r.start) <= now) && (!r.end || new Date(r.end) >= now));
+  }
+  function collectAlerts(...lists) {
+    const out = [], seen = new Set();
+    for (const l of lists) for (const a of (l || [])) {
+      if (!a || !(a.headerText || a.descriptionText) || !activeAlert(a)) continue;
+      const k = (a.headerText || "") + "|" + (a.descriptionText || "").slice(0, 60);
+      if (!seen.has(k)) { seen.add(k); out.push(a); }
+    }
+    return out.sort((x, y) => (SEV[y.severityLevel] || 1) - (SEV[x.severityLevel] || 1));
+  }
+  const legAlerts = (l) => collectAlerts(l.alerts, l.from && l.from.alerts, l.to && l.to.alerts, ...(l.intermediateStops || []).map((x) => x.alerts));
+  const itinAlerts = (it) => collectAlerts(...(it.legs || []).map(legAlerts));
+  const WARN_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.01"/></svg>';
+  function alertsHtml(list) {
+    if (!list.length) return "";
+    return `<div class="alerts">${list.map((a) => {
+      const sev = a.severityLevel === "SEVERE" ? "severe" : (a.severityLevel === "INFO" ? "info" : "warn");
+      const cause = CAUSE[a.cause] ? `<span class="acause">${esc(CAUSE[a.cause])}</span>` : "";
+      const head = a.headerText || (a.descriptionText || "").slice(0, 90);
+      const desc = a.descriptionText && a.descriptionText !== a.headerText ? a.descriptionText : "";
+      return `<div class="alert ${sev}" role="note">${WARN_ICON}<div class="abody">${cause}<b>${esc(head)}</b>${desc ? `<details><summary>Dettagli</summary><p>${esc(desc)}</p></details>` : ""}${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">Maggiori informazioni</a>` : ""}</div></div>`;
+    }).join("")}</div>`;
+  }
+
   // ---------- Risultati ----------
   function legChip(l) {
     if (l.mode === "WALK") return `<span class="chip walk">${ICONS.WALK}${Math.max(1, Math.round(l.duration / 60))}′</span>`;
@@ -654,7 +687,8 @@
       <div class="meta">${day}${firstT ? `<span>Parte da ${esc(firstT.from.name)} alle ${fmtTime(firstT.startTime)}</span>` : "<span>Tutto a piedi</span>"}
         ${it.transfers ? `<span>${it.transfers} cambi${it.transfers === 1 ? "o" : ""}</span>` : (firstT ? "<span>Diretto</span>" : "")}
         ${walkM >= 60 ? `<span>${fmtDur(walkM)} a piedi</span>` : ""}
-        ${firstT && firstT.realTime ? (dl > 0 ? `<span class="late">+${dl} min</span>` : '<span class="rt">In orario</span>') : ""}</div></button>`;
+        ${firstT && firstT.realTime ? (dl > 0 ? `<span class="late">+${dl} min</span>` : '<span class="rt">In orario</span>') : ""}
+        ${itinAlerts(it).length ? `<span class="awarn">${WARN_ICON} Avviso di servizio</span>` : ""}</div></button>`;
   }
 
   function showResults() {
@@ -734,6 +768,7 @@
       } else {
         const inter = l.intermediateStops || [];
         html += `<div>${legChip(l)} <b>→ ${esc(l.headsign || (l.tripTo && l.tripTo.name) || "")}</b></div>
+          ${alertsHtml(legAlerts(l))}
           <div class="small muted">${esc(l.agencyName || modeName(l.mode))}${l.cancelled ? ' · <span class="cancel">Corsa soppressa</span>' : ""}${l.realTime ? (d > 0 ? ` · <span class="late">ritardo ${d} min</span>` : ' · <span class="rt">dati in tempo reale</span>') : " · orario programmato"}</div>
           ${inter.length ? `<details><summary>${inter.length + 1} fermate · ${fmtDur(l.duration)}</summary><div class="mini">${inter.map((s) => `<div><span>${fmtTime(s.arrival || s.departure)}</span><span>${esc(s.name)}</span></div>`).join("")}</div></details>` : `<div class="small muted">${fmtDur(l.duration)} senza fermate intermedie</div>`}
           ${l.tripId ? `<div><button class="btn small" data-trip="${i}">Vedi tutta la corsa</button></div>` : ""}`;
@@ -757,7 +792,7 @@
       if (!l) throw new Error("Dettagli della corsa non disponibili.");
       const stops = [l.from, ...(l.intermediateStops || []), l.to];
       const now = Date.now();
-      const html = `<div style="margin-bottom:10px">${legChip(l)} <b>→ ${esc(l.headsign || l.to.name)}</b><div class="small muted">${esc(l.agencyName || "")}${l.realTime ? ' · <span class="rt">dati in tempo reale</span>' : " · orario programmato"}</div></div>
+      const html = `${alertsHtml(legAlerts(l))}<div style="margin-bottom:10px">${legChip(l)} <b>→ ${esc(l.headsign || l.to.name)}</b><div class="small muted">${esc(l.agencyName || "")}${l.realTime ? ' · <span class="rt">dati in tempo reale</span>' : " · orario programmato"}</div></div>
         <div class="mini" style="font-size:15px;gap:2px">${stops.map((s) => {
           const t = s.departure || s.arrival; const past = t && new Date(t) < now; const hl = s.stopId && s.stopId === highlightStopId;
           const dd = delayMin(t, s.scheduledDeparture || s.scheduledArrival);
@@ -779,15 +814,20 @@
   }
 
   // ---------- Partenze da una fermata ----------
-  async function showDepartures(stop) {
-    pushCurrent();
-    loading(stop.name);
-    map.setView([stop.lat, stop.lon], Math.max(map.getZoom(), 16));
+  async function showDepartures(stop, refresh) {
+    if (!refresh) {
+      pushCurrent();
+      loading(stop.name);
+      map.setView([stop.lat, stop.lon], Math.max(map.getZoom(), 16));
+    }
     try {
-      const r = await motis("stoptimes", { stopId: stop.id, n: 25, time: new Date().toISOString(), language: "it" });
+      const r = await motis("stoptimes", { stopId: stop.id, n: 25, time: new Date(Date.now()).toISOString(), language: "it", withAlerts: true });
+      // Aggiornamento in sottofondo: solo se l'utente è ancora su questa fermata
+      if (refresh && !(state.viewKind === "departures" && state.depStop && state.depStop.id === stop.id)) return;
       const list = r.stopTimes || [];
       let lastDay = dayLabel(new Date(Date.now()).toISOString());
       const html = `<div class="row" style="margin-bottom:6px"><button class="btn small primary" data-go="to">Portami qui</button><button class="btn small" data-go="from">Parti da qui</button><button class="btn small" data-fav-stop>${isFav(stop) ? "★ Preferito" : "☆ Preferito"}</button></div>
+        ${alertsHtml(collectAlerts(r.place && r.place.alerts))}
         ${list.length ? list.map((s, i) => {
           const t = s.place.departure || s.place.arrival; const sch = s.place.scheduledDeparture || s.place.scheduledArrival;
           const day = dayLabel(t); const head = day !== lastDay ? `<div class="label">${esc(day)}</div>` : ""; lastDay = day;
@@ -796,15 +836,20 @@
           const bg = s.routeColor ? "#" + s.routeColor : "var(--transit)"; const fg = s.routeTextColor ? "#" + s.routeTextColor : "#fff";
           const name = s.routeShortName || s.displayName || s.tripShortName || modeName(s.mode);
           return `${head}<button class="dep" data-d="${i}"><span class="chip" style="background:${bg};color:${fg}">${modeIcon(s.mode)}${esc(name)}</span>
-            <span class="hs"><b>${esc(s.headsign || (s.tripTo && s.tripTo.name) || "")}</b><span class="small muted">${esc(s.agencyName || "")}${s.place.track ? " · bin. " + esc(s.place.track) : ""}</span></span>
+            <span class="hs"><b>${esc(s.headsign || (s.tripTo && s.tripTo.name) || "")}</b><span class="small muted">${esc(s.agencyName || "")}${s.place.track ? " · bin. " + esc(s.place.track) : ""}${collectAlerts(s.place.alerts).length ? ` · <span class="awarn">${WARN_ICON} avviso</span>` : ""}</span></span>
             <span class="in ${s.cancelled || s.tripCancelled ? "cancel" : ""}">${when}<small>${fmtTime(t)}${s.realTime ? (dd > 0 ? ` <span class="late">+${dd}</span>` : ' <span class="rt">live</span>') : ""}</small></span></button>`;
-        }).join("") : '<p class="empty">Nessuna partenza trovata da questa fermata.</p>'}`;
-      view(stop.name, html, { level: 1, draw: () => { routeLayer.clearLayers(); L.circleMarker([stop.lat, stop.lon], { radius: 8, color: cssVar("--surface"), weight: 3, fillColor: cssVar("--transit"), fillOpacity: 1 }).addTo(routeLayer); }, bind: (root) => {
+        }).join("") : '<p class="empty">Nessuna partenza trovata da questa fermata.</p>'}
+        <p class="small muted" style="margin:10px 0 0">Aggiornato alle ${fmtTime(new Date(Date.now()).toISOString())} · si aggiorna da solo</p>`;
+      const scroll = refresh ? $("#sheetBody").scrollTop : 0;
+      state.depStop = stop; state.depAt = Date.now();
+      view(stop.name, html, { level: refresh ? null : 1, kind: "departures", draw: refresh ? null : () => { routeLayer.clearLayers(); L.circleMarker([stop.lat, stop.lon], { radius: 8, color: cssVar("--surface"), weight: 3, fillColor: cssVar("--transit"), fillOpacity: 1 }).addTo(routeLayer); }, bind: (root) => {
         root.querySelectorAll("[data-go]").forEach((b) => b.onclick = () => setPlace(b.dataset.go, { ...stop, type: "STOP" }));
         const fs = root.querySelector("[data-fav-stop]"); if (fs) fs.onclick = () => { fs.textContent = toggleFav({ ...stop, type: "STOP" }) ? "★ Preferito" : "☆ Preferito"; };
         root.querySelectorAll("[data-d]").forEach((b) => b.onclick = () => { const s = list[+b.dataset.d]; showTrip(s.tripId, stop.id); });
       } });
+      if (refresh) { $("#sheetBody").scrollTop = scroll; state.currentDraw = () => { routeLayer.clearLayers(); L.circleMarker([stop.lat, stop.lon], { radius: 8, color: cssVar("--surface"), weight: 3, fillColor: cssVar("--transit"), fillOpacity: 1 }).addTo(routeLayer); }; }
     } catch (e) {
+      if (refresh) return; // un aggiornamento fallito lascia i dati di prima
       view(stop.name, errorBox(e.message), { level: 1, kind: "error" });
     }
   }
@@ -1014,19 +1059,69 @@
       if (pts.length < 2) pts = [[l.from.lat, l.from.lon], [l.to.lat, l.to.lon]];
       const line = makeLine(pts), isT = l.mode !== "WALK" && l.mode !== "CAR";
       const g = { l, isT, line, pts };
-      if (isT) g.stops = [l.from, ...(l.intermediateStops || []), l.to].map((x) => ({ name: x.name, time: x.arrival || x.departure, at: projectOn(line, [x.lat, x.lon]).along }));
+      if (isT) g.stops = [l.from, ...(l.intermediateStops || []), l.to].map((x) => ({ name: x.name, stopId: x.stopId, time: x.arrival || x.departure, at: projectOn(line, [x.lat, x.lon]).along }));
       else g.steps = motisSteps(l.steps);
       return g;
     });
     if (!NAV.legs.length) return;
+    NAV.seenAlerts = new Set(); NAV.refreshedAt = Date.now();
     drawItin(it);
     beginNav();
     enterLeg(0);
     scheduleAlerts(NAV.legs);
+    const al = itinAlerts(it);
+    al.forEach((a) => NAV.seenAlerts.add(a.headerText || a.descriptionText));
+    if (al.length) toast("Avviso di servizio: " + (al[0].headerText || al[0].descriptionText));
+  }
+  const tripSummary = () => summary(`Tratta ${NAV.li + 1} di ${NAV.legs.length} · arrivo ${fmtTime(NAV.endTime)}`);
+
+  // Viaggio seguito: ogni minuto rilegge le corse (ritardi e avvisi in tempo reale, quando l'azienda li pubblica)
+  async function refreshTrip(force) {
+    if (!NAV.active || NAV.kind !== "trip" || NAV.refreshing || NAV.arrived) return;
+    if (!force && Date.now() - (NAV.refreshedAt || 0) < 60000) return;
+    NAV.refreshing = true; NAV.refreshedAt = Date.now();
+    let shift = 0, changed = false;
+    try {
+      for (let i = NAV.li; i < NAV.legs.length; i++) {
+        const g = NAV.legs[i];
+        if (!g.isT) { // le tratte a piedi seguono il ritardo della tratta precedente
+          if (shift) { g.l.startTime = new Date(new Date(g.l.startTime).getTime() + shift).toISOString(); g.l.endTime = new Date(new Date(g.l.endTime).getTime() + shift).toISOString(); }
+          continue;
+        }
+        if (!g.l.tripId) continue;
+        const it = await motis("trip", { tripId: g.l.tripId, language: "it" });
+        const tl = (it.legs || []).find((x) => x.tripId === g.l.tripId) || (it.legs || [])[0];
+        if (!tl) continue;
+        const all = [tl.from, ...(tl.intermediateStops || []), tl.to];
+        const byId = (id) => all.find((x) => id && x.stopId === id);
+        g.stops.forEach((st) => { const f = byId(st.stopId); const t = f && (f.arrival || f.departure); if (t && t !== st.time) { st.time = t; changed = true; } });
+        const on = byId(g.l.from.stopId), off = byId(g.l.to.stopId);
+        if (on && on.departure && on.departure !== g.l.startTime) { g.l.startTime = on.departure; changed = true; }
+        if (off && off.arrival && off.arrival !== g.l.endTime) {
+          shift = new Date(off.arrival) - new Date(g.l.endTime);
+          g.l.endTime = off.arrival; changed = true;
+        } else shift = 0;
+        if (tl.cancelled && !g.l.cancelled) { g.l.cancelled = true; speak(`Attenzione: la corsa ${lineName(g.l)} risulta soppressa`); toast(`${lineName(g.l)}: corsa soppressa`); buzz(800); }
+        for (const a of legAlerts(tl)) {
+          const k = a.headerText || a.descriptionText;
+          if (NAV.seenAlerts.has(k)) continue;
+          NAV.seenAlerts.add(k);
+          toast("Avviso di servizio: " + k); speak("Avviso di servizio. " + (a.ttsHeaderText || k)); buzz(300);
+        }
+      }
+      if (changed) {
+        const lastLeg = NAV.legs[NAV.legs.length - 1];
+        NAV.endTime = lastLeg.l.endTime;
+        cancelAlerts(); scheduleAlerts(NAV.legs); // la notifica di discesa segue il ritardo
+        tripSummary();
+        if (NAV.pos && !NAV.arrived) tripUpdate(NAV.pos, 0);
+      }
+    } catch (e) { /* senza rete o servizio lento: si riprova al prossimo giro */ }
+    finally { NAV.refreshing = false; }
   }
   function enterLeg(i) {
     NAV.li = i; const g = NAV.legs[i];
-    summary(`Tratta ${i + 1} di ${NAV.legs.length} · arrivo ${fmtTime(NAV.endTime)}`);
+    tripSummary();
     if (!g.isT) {
       const next = NAV.legs[i + 1];
       setRoute(g.line, g.steps, g.l.duration, next && next.isT ? `Arrivo alla fermata ${next.l.from.name}` : "Arrivo a destinazione");
@@ -1070,6 +1165,16 @@
   $("#navVoice").onclick = () => { NAV.voice = !NAV.voice; store("voice", NAV.voice); if (!NAV.voice) hush(); voiceBtn(); };
   $("#navCenter").onclick = () => { NAV.follow = true; $("#navCenter").hidden = true; if (NAV.pos) map.setView(NAV.pos, 17); };
   map.on("dragstart", () => { if (NAV.active) { NAV.follow = false; $("#navCenter").hidden = false; } });
+
+  // ---------- Aggiornamento automatico ----------
+  function tick(force) {
+    if (document.hidden && !force) return;
+    if (navigator.onLine === false) return;
+    if (state.viewKind === "departures" && state.depStop && (force || Date.now() - (state.depAt || 0) >= 30000)) showDepartures(state.depStop, true);
+    refreshTrip(force);
+  }
+  setInterval(tick, 15000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
 
   // ---------- Rete: avvisi quando va e viene ----------
   function netChanged() {
@@ -1116,5 +1221,5 @@
   }
 
   // Per i test
-  window.__girovia = { map, NAV, projectOn, makeLine, spokenDist, prettyName, decodePolyline, osrmText, fmtDur, fmtDist, state, showResults, showItin, view };
+  window.__girovia = { map, NAV, tick, projectOn, makeLine, spokenDist, prettyName, decodePolyline, osrmText, fmtDur, fmtDist, state, showResults, showItin, view };
 })();

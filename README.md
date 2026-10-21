@@ -11,6 +11,9 @@ Mezzi pubblici, auto e piedi per Firenze e la Toscana, in un'unica app. Senza pu
 - **Corsa intera**: tutte le fermate di una linea con gli orari e il tragitto sulla mappa.
 - **Recenti, Viaggi salvati, Preferiti** (con Casa e Lavoro): tutto salvato solo sul telefono.
 - **Fermate sulla mappa**: avvicinati con lo zoom e tocca una fermata per vederne gli orari.
+- **Avvisi di servizio** (scioperi, deviazioni, lavori) nei risultati, nel dettaglio e alla fermata; nel viaggio seguito quelli nuovi vengono annunciati a voce.
+- **Tempo reale**: partenze aggiornate ogni 30 secondi; nel viaggio seguito ritardi e notifica di discesa aggiornati ogni minuto (quando l'azienda pubblica dati in tempo reale).
+- **Funziona offline**: l'app si apre anche senza rete e mostra le zone di mappa già viste; avvisa quando la rete va e viene.
 
 ## Da dove arrivano i dati
 
@@ -20,7 +23,7 @@ Mezzi pubblici, auto e piedi per Firenze e la Toscana, in un'unica app. Senza pu
 | Mappa | [OpenStreetMap](https://www.openstreetmap.org) |
 | Percorsi in auto e a piedi | [OSRM di FOSSGIS](https://routing.openstreetmap.de) |
 
-L'app non ha un server suo: il telefono chiede i dati direttamente a questi servizi gratuiti. Le ricerche recenti restano solo sul telefono.
+L'app non ha un server suo: il telefono chiede i dati direttamente a questi servizi gratuiti. Leaflet e i caratteri sono inclusi nell'app, quindi nessuna richiesta a CDN o a Google Fonts. Dettagli in [privacy.html](privacy.html) (anche nell'app, scheda Info).
 
 ## Limiti da sapere
 
@@ -63,7 +66,11 @@ In locale: `npm ci`, poi `npm run lint`, `npm test` e `npm run test:live`.
 
 - `index.html`: interfaccia e stili
 - `app.js`: logica (ricerca luoghi, percorsi, partenze, mappa)
-- `config.js`: indirizzi dei servizi, centro della mappa, contatto del progetto
+- `config.js`: indirizzi dei servizi, fornitori di mappa (con riserva automatica), tempo massimo delle richieste, contatto del progetto
+- `sw.js`: funzionamento offline (versione web)
+- `privacy.html`: informativa
+- `vendor/`, `fonts/`: Leaflet e caratteri inclusi (con le loro licenze)
+- `scripts/copy-app.sh`: prepara i file per il sito e per l'APK
 - `tests/`: test con dati di esempio e con dati reali
 - `.github/workflows/`: controlli e pubblicazione
 - `manifest.webmanifest`, icone: installazione sulla schermata Home
