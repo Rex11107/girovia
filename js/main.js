@@ -3,7 +3,7 @@
    Avvio: collega i moduli, aggiornamento automatico, rete, tasto Indietro. */
 
 import { initNav, refreshTrip, reroute, speak, stopNav, summary } from "./nav.js";
-import { homeView, showDepartures, showItin, showResults } from "./views.js";
+import { homeView, showDepartures, showItin, showNearbyStops, showResults } from "./views.js";
 import { drawPins, initMap, locate, map, routeLayer } from "./map.js";
 import { decodePolyline, fmtDist, fmtDur, makeLine, osrmText, prettyName, projectOn, spokenDist } from "./util.js";
 import { blurInputs, hideSugg, initPlaces, syncInputs } from "./places.js";
@@ -31,6 +31,7 @@ const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && win
 
 // ---------- Avvio ----------
 initSheet(); initMap(); initPlaces(); initNav();
+$("#stopsBtn").onclick = showNearbyStops;
 setInterval(tick, 15000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
 window.addEventListener("offline", () => {

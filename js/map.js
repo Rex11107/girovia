@@ -4,7 +4,7 @@ import { showDepartures } from "./views.js";
 import { motis } from "./api.js";
 import { $, cssVar, toast } from "./ui.js";
 import { blurInputs, hideSugg, isFav, setPlace, toggleFav } from "./places.js";
-import { areaLabel, decodePolyline, esc, fmtTime, placeLabel } from "./util.js";
+import { areaLabel, decodePolyline, distM, esc, fmtTime, placeLabel } from "./util.js";
 import { CFG, state } from "./state.js";
 
 // ---------- Mappa ----------
@@ -61,22 +61,41 @@ function bindPopup(pop, p) {
 
 // Fermate visibili sulla mappa quando lo zoom è alto
 let stopsAbort = null, stopsTimer = null;
+const STOP_ICON = L.divIcon({ className: "stopdot", html: "", iconSize: [16, 16], iconAnchor: [8, 8] });
+let visibleStops = [];
+// Pulsante "Fermate qui": elenco delle fermate visibili, alternativa ai punti sulla mappa
+function updateStopsButton() {
+  const b = $("#stopsBtn"); if (!b) return;
+  b.hidden = !visibleStops.length || document.body.classList.contains("navigating");
+  b.textContent = `Fermate qui · ${visibleStops.length}`;
+}
+export function nearbyStops() {
+  const c = map.getCenter(); const here = [c.lat, c.lng];
+  return visibleStops.map((s) => ({ ...s, d: distM(here, [s.lat, s.lon]) })).sort((a, b) => a.d - b.d);
+}
 async function loadStops() {
-  if (map.getZoom() < 16) { stopsLayer.clearLayers(); return; }
+  if (map.getZoom() < 16) { stopsLayer.clearLayers(); visibleStops = []; updateStopsButton(); return; }
   if (stopsAbort) stopsAbort.abort(); stopsAbort = new AbortController();
   const b = map.getBounds();
   try {
     const stops = await motis("map/stops", { min: `${b.getSouth()},${b.getWest()}`, max: `${b.getNorth()},${b.getEast()}` }, stopsAbort.signal);
     stopsLayer.clearLayers();
-    const accent = cssVar("--transit") || "#b3261e";
+    visibleStops = [];
     (stops || []).slice(0, 400).forEach((s) => {
       if (!s.stopId) return;
-      L.circleMarker([s.lat, s.lon], { radius: 6, color: "#fff", weight: 2, fillColor: accent, fillOpacity: 1 })
-        .bindTooltip(s.name, { direction: "top" })
-        .on("click", (ev) => { L.DomEvent.stop(ev); showDepartures({ id: s.stopId, name: s.name, lat: s.lat, lon: s.lon, type: "STOP" }); })
+      const stop = { id: s.stopId, name: s.name, lat: s.lat, lon: s.lon, type: "STOP", modes: s.modes };
+      visibleStops.push(stop);
+      // Segnaposto raggiungibile con il tasto Tab e attivabile con Invio (Leaflet keyboard: true)
+      const m = L.marker([s.lat, s.lon], { icon: STOP_ICON, keyboard: true, title: s.name, riseOnHover: true })
+        .on("click", (ev) => { L.DomEvent.stop(ev); showDepartures(stop); })
+        // Leaflet collega Invio solo ai segnaposti con popup: qui Invio e Spazio aprono le partenze
+        .on("keydown", (ev) => { const k = ev.originalEvent; if (k.key === "Enter" || k.key === " ") { k.preventDefault(); showDepartures(stop); } })
         .addTo(stopsLayer);
+      const el = m.getElement();
+      if (el) el.setAttribute("aria-label", `Fermata ${s.name}: mostra le partenze`);
     });
-  } catch (e) { if (e.name !== "AbortError") stopsLayer.clearLayers(); }
+    updateStopsButton();
+  } catch (e) { if (e.name !== "AbortError") { stopsLayer.clearLayers(); visibleStops = []; updateStopsButton(); } }
 }
 
 // ---------- Posizione ----------

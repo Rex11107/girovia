@@ -2,8 +2,8 @@
 
 import { startRoadNav, startTripNav } from "./nav.js";
 import { motis, roadRoutes } from "./api.js";
-import { drawItin, drawPins, fit, locate, map, routeLayer } from "./map.js";
-import { collectAlerts, dayLabel, decodePolyline, delayMin, esc, fmtDay, fmtDist, fmtDur, fmtTime, itinAlerts, legAlerts, minutesUntil, modeName, motisSteps, placeParam, prettyName, sameDay } from "./util.js";
+import { drawItin, drawPins, fit, locate, map, nearbyStops, routeLayer } from "./map.js";
+import { collectAlerts, dayLabel, decodePolyline, delayMin, esc, fmtDay, fmtDist, fmtDur, fmtTime, itinAlerts, legAlerts, minutesUntil, modeName, motisSteps, placeParam, prettyName, sameDay, stopModes } from "./util.js";
 import { blurInputs, chosenTime, favs, hideSugg, isFav, sameTrip, setPlace, syncInputs, toggleFav, toggleTrip, trips } from "./places.js";
 import { $, ICONS, TRASH, WARN_ICON, alertsHtml, applyTheme, cssVar, errorBox, getTheme, legChip, loading, modeIcon, pushCurrent, view } from "./ui.js";
 import { CFG, state, store } from "./state.js";
@@ -212,11 +212,13 @@ async function showTrip(tripId, highlightStopId) {
     const stops = [l.from, ...(l.intermediateStops || []), l.to];
     const now = Date.now();
     const html = `${alertsHtml(legAlerts(l))}<div style="margin-bottom:10px">${legChip(l)} <b>→ ${esc(l.headsign || l.to.name)}</b><div class="small muted">${esc(l.agencyName || "")}${l.realTime ? ' · <span class="rt">dati in tempo reale</span>' : " · orario programmato"}</div></div>
-      <div class="mini" style="font-size:15px;gap:2px">${stops.map((s) => {
+      <ol class="tripstops">${stops.map((s, k) => {
         const t = s.departure || s.arrival; const past = t && new Date(t) < now; const hl = s.stopId && s.stopId === highlightStopId;
+        const isNext = !past && (k === 0 || (stops[k - 1] && new Date(stops[k - 1].departure || stops[k - 1].arrival) < now));
         const dd = delayMin(t, s.scheduledDeparture || s.scheduledArrival);
-        return `<div style="padding:6px 0;border-bottom:1px solid var(--line);${past ? "opacity:.55;" : ""}${hl ? "font-weight:700;" : ""}"><span style="min-width:48px">${fmtTime(t)}${dd > 0 ? ` <small class="late">+${dd}</small>` : ""}</span><span>${esc(s.name)}</span></div>`;
-      }).join("")}</div>`;
+        const tag = past ? `<span class="tag past">${CHECK_ICON}passata</span>` : (isNext && k > 0 ? '<span class="tag next">prossima</span>' : "");
+        return `<li class="${past ? "past" : ""}${hl ? " mine" : ""}"><span class="tt">${fmtTime(t)}${dd > 0 ? ` <small class="late">+${dd}</small>` : ""}</span><span class="tn">${esc(s.name)}${hl ? '<span class="tag mine">la tua fermata</span>' : ""}</span>${tag}</li>`;
+      }).join("")}</ol>`;
     const lname = l.routeShortName || l.displayName || modeName(l.mode);
     view(/^\d/.test(lname) || lname.length <= 4 ? "Linea " + lname : lname, html, { level: 1, draw: () => {
       routeLayer.clearLayers();
@@ -230,6 +232,19 @@ async function showTrip(tripId, highlightStopId) {
   } catch (e) {
     view("Corsa", errorBox(e.message), { level: 1, kind: "error" });
   }
+}
+
+const CHECK_ICON = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+// ---------- Fermate visibili sulla mappa (elenco accessibile) ----------
+export function showNearbyStops() {
+  const list = nearbyStops();
+  const html = list.length ? `<p class="small muted" style="margin:0 0 6px">Dalla più vicina al centro della mappa.</p>` + list.map((s, i) =>
+    `<div class="rowitem"><button class="recent" data-ns="${i}"><span class="sicon">${ICONS.STOP}</span><span class="stext"><b>${esc(s.name)}</b><small>${esc([stopModes(s.modes), fmtDist(s.d)].filter(Boolean).join(" · "))}</small></span></button></div>`).join("")
+    : '<p class="empty">Nessuna fermata in questa zona. Sposta la mappa o avvicinati con lo zoom.</p>';
+  view("Fermate qui", html, { push: true, level: 1, kind: "stops", bind: (root) => {
+    root.querySelectorAll("[data-ns]").forEach((b) => b.onclick = () => showDepartures(list[+b.dataset.ns]));
+  } });
 }
 
 // ---------- Partenze da una fermata ----------

@@ -212,3 +212,21 @@ body.navigating .leaflet-bottom{bottom:calc(env(safe-area-inset-bottom,0px) + 96
 .navbtns{display:flex;gap:8px;align-items:center}
 .navbtns button{height:44px;min-width:44px;border:0;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;font-weight:700}
 #navStop{background:var(--bad);color:#fff;padding:0 16px}
+
+/* Fermate sulla mappa: segnaposti raggiungibili da tastiera */
+.stopdot{background:var(--transit);border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.35);cursor:pointer}
+.stopdot:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#stopsBtn{position:fixed;z-index:15;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(var(--sheet-h) + 34px);height:40px;padding:0 14px;border:0;border-radius:20px;background:var(--surface);color:var(--fg);font-weight:700;box-shadow:var(--shadow);transition:bottom .25s}
+body.navigating #stopsBtn{display:none}
+
+/* Corsa intera: fermate passate segnate anche con icona e parola, non solo col colore */
+.tripstops{list-style:none;margin:0;padding:0;font-size:15px}
+.tripstops li{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:8px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--line)}
+.tripstops .tt{font-variant-numeric:tabular-nums}
+.tripstops li.past{color:var(--muted)}
+.tripstops li.past .tt{text-decoration:line-through;text-decoration-thickness:1px}
+.tripstops li.mine .tn{font-weight:700}
+.tag{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.tag.past{background:var(--surface-2);color:var(--muted)}
+.tag.next{background:var(--accent);color:var(--accent-fg)}
+.tag.mine{margin-left:6px;border:1.5px solid var(--accent);color:var(--fg)}
