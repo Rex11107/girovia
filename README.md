@@ -4,6 +4,17 @@ Mezzi pubblici, auto, bici e piedi per Firenze e la Toscana, in un'unica app. Se
 
 **Web:** https://rex11107.github.io/girovia/ · **Android:** [scarica l'APK](https://github.com/Rex11107/girovia/releases/latest/download/girovia.apk) · [Novità](CHANGELOG.md) · [Privacy](privacy.html)
 
+<p>
+<img src="docs/screenshots/risultati.jpg" width="200" alt="Risultati da Firenze Santa Maria Novella a Pontassieve con treno regionale">
+<img src="docs/screenshots/dettaglio.jpg" width="200" alt="Dettaglio del viaggio con binario, dati in tempo reale e link ai biglietti">
+<img src="docs/screenshots/corsa.jpg" width="200" alt="Corsa intera del regionale con tutte le fermate e gli orari">
+<img src="docs/screenshots/auto.jpg" width="200" alt="Percorsi in auto verso Greve in Chianti con due alternative">
+<img src="docs/screenshots/fermate.jpg" width="200" alt="Fermate visibili sulla mappa in centro a Firenze">
+<img src="docs/screenshots/info.jpg" width="200" alt="Scheda Info con scelta del tema e opzione sharing">
+</p>
+
+<sub>Screenshot con dati reali, presi dai controlli automatici.</sub>
+
 ## Cosa fa
 
 **Percorsi**
@@ -40,7 +51,7 @@ L'app non ha un server suo: il telefono chiede i dati direttamente a questi serv
 
 ## Limiti da sapere
 
-- Per la Toscana oggi Transitous non riceve dati in tempo reale né avvisi delle aziende: vedi gli **orari programmati**. Ritardi e avvisi compaiono da soli quando i dati arriveranno.
+- I **treni Trenitalia** hanno dati in tempo reale (ritardi, binario); i **bus Autolinee Toscane** no: per loro vedi gli orari programmati. Ritardi e avvisi dei bus compariranno da soli quando AT li pubblicherà.
 - A Firenze oggi non ci sono dati di **sharing** pubblici in Transitous.
 - I tempi **in auto non considerano il traffico**.
 - La navigazione funziona con l'app aperta; gli avvisi di discesa a schermo spento si basano sull'orario previsto.

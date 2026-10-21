@@ -15,7 +15,7 @@ Le versioni seguono [Semantic Versioning](https://semver.org/lang/it/). Ogni sez
 - Corsa intera: fermate già passate segnate con icona e parola, prossima fermata evidenziata.
 - **Funziona offline** (versione web): l'app si apre senza rete e mostra le zone di mappa già viste; avvisa quando la rete va e viene.
 - **Avvisi di servizio** (scioperi, deviazioni, lavori) nei risultati, nel dettaglio e alla fermata, quando l'azienda li pubblica.
-- Partenze aggiornate da sole ogni 30 secondi; nel viaggio seguito ritardi e notifica di discesa aggiornati ogni minuto.
+- Partenze aggiornate da sole ogni 30 secondi; nel viaggio seguito ritardi e notifica di discesa aggiornati ogni minuto (oggi per i treni Trenitalia; i bus AT non pubblicano dati in tempo reale).
 - Pagina **Privacy** con cosa resta sul telefono e cosa ricevono i servizi esterni.
 
 ### Migliorato
