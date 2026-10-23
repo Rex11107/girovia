@@ -1,0 +1,10 @@
+[WebServer] (node:3351) [DEP0066] DeprecationWarning: OutgoingMessage.prototype._headers is deprecated
+[WebServer] (Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 3 tests using 1 worker
+
+  ✓  1 [live] › tests/app.live.spec.js:17:1 › Firenze SMN → Pontassieve con i mezzi (18.8s)
+  ✓  2 [live] › tests/app.live.spec.js:48:1 › Firenze → Greve in Chianti in auto e a piedi verso Fiesole (13.9s)
+  ✓  3 [live] › tests/app.live.spec.js:67:1 › fermate sulla mappa in centro (4.9s)
+
+  3 passed (38.8s)
