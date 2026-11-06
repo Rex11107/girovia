@@ -4,7 +4,7 @@
 // Uso: node tests/android/offline-device.mjs <apk>
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
-import { chromium } from "@playwright/test";
+import { _android as android } from "@playwright/test";
 
 const APK = process.argv[2];
 const PKG = "io.github.rex11107.girovia";
@@ -31,24 +31,18 @@ async function check(name, fn) {
   catch (e) { fail(name, e.message); return false; }
 }
 
-let browser = null, page = null;
+// Playwright per Android: si collega alla WebView dell'app via adb (connectOverCDP non supporta le WebView)
+let device = null, page = null;
 async function connect() {
-  if (browser) { await browser.close().catch(() => {}); browser = null; }
-  try { adb("forward", "--remove-all"); } catch { /* niente da togliere */ }
+  page = null;
+  if (!device) [device] = await android.devices();
+  if (!device) throw new Error("nessun dispositivo adb");
   for (let i = 0; i < 60; i++) {
-    let pid = "";
-    try { pid = adb("shell", "pidof", PKG).trim(); } catch { /* app non ancora avviata */ }
-    const socks = pid ? adb("shell", "cat", "/proc/net/unix") : "";
-    const m = pid && socks.match(new RegExp(`@(webview_devtools_remote_${pid})\\b`));
-    if (m) {
-      adb("forward", "tcp:9222", `localabstract:${m[1]}`);
-      browser = await chromium.connectOverCDP("http://127.0.0.1:9222");
-      for (let k = 0; k < 30; k++) {
-        page = browser.contexts().flatMap((c) => c.pages()).find((p) => p.url().startsWith("https://rex11107.github.io"));
-        if (page) break;
-        await sleep(500);
-      }
-      if (!page) throw new Error("pagina dell'app non trovata nella WebView");
+    let pid = 0;
+    try { pid = Number(adb("shell", "pidof", PKG).trim().split(/\s+/)[0]); } catch { /* app non ancora avviata */ }
+    const wv = pid && device.webViews().find((w) => w.pkg() === PKG && w.pid() === pid);
+    if (wv) {
+      page = await wv.page();
       await page.locator("#sheetTitle").waitFor({ timeout: 30000 });
       return;
     }
@@ -174,7 +168,7 @@ main()
   .catch((e) => fail("Errore inatteso", e.stack || e.message))
   .finally(async () => {
     try { fs.writeFileSync(`${OUT}/logcat.txt`, adb("logcat", "-d", "-v", "time", "chromium:I", "Capacitor:V", "Capacitor/Console:V", "*:S")); } catch { /* logcat non disponibile */ }
-    if (browser) await browser.close().catch(() => {});
+    if (device) await device.close().catch(() => {});
     log(`\n**Esito: ${failures ? failures + " verifiche fallite" : "tutto ok"}**`);
     fs.writeFileSync(`${OUT}/rapporto.md`, lines.join("\n") + "\n");
     if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n");
