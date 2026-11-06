@@ -66,7 +66,12 @@ async function main() {
       if (!r.length) { fail(`"${q}"`, "nessun risultato"); continue; }
       const top = r[0];
       const stop = r.find((m) => m.type === "STOP");
-      if (q.startsWith("Firenze Santa") && stop) smnStop = stop;
+      if (q.startsWith("Firenze Santa")) {
+        // il primo risultato può essere la zona: la fermata si chiede filtrando per tipo
+        const s = await motis("geocode", { text: q, language: "it", place: "43.77,11.25", placeBias: 1.5, numResults: 5, type: "STOP" });
+        smnStop = (s || [])[0] || stop || null;
+        if (smnStop) ok("Fermata per \"Firenze Santa Maria Novella\"", smnStop.name);
+      }
       ok(`"${q}"`, `${top.name} (${top.type}) ${top.lat.toFixed(3)},${top.lon.toFixed(3)}${stop ? ` · prima fermata: ${stop.name}` : ""}`);
     } catch (e) { fail(`"${q}"`, e.message); }
   }

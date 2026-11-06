@@ -12,6 +12,16 @@ async function pick(page, field, text) {
   await page.locator("#sugg button").first().click();
 }
 
+// Sceglie il primo suggerimento che è una fermata (il primo risultato può essere la zona)
+async function pickStop(page, field, text) {
+  await page.click("#" + field);
+  await page.fill("#" + field, text);
+  const stop = page.locator("#sugg button", { hasText: "Fermata" }).first();
+  await stop.waitFor({ timeout: 20000 });
+  await page.waitForTimeout(800);
+  await page.locator("#sugg button", { hasText: "Fermata" }).first().click();
+}
+
 test.describe.configure({ mode: "serial" });
 
 test("Firenze SMN → Pontassieve con i mezzi", async ({ page }) => {
@@ -23,7 +33,7 @@ test("Firenze SMN → Pontassieve con i mezzi", async ({ page }) => {
   await page.click("[data-tab='info']");
   await page.screenshot({ path: `${SHOTS}/01b-info.png` });
   await page.click("[data-tab='recent']");
-  await pick(page, "from", "Firenze Santa Maria Novella");
+  await pickStop(page, "from", "Firenze Santa Maria Novella");
   await expect(page.locator("#sheetTitle")).not.toHaveText("Dove vuoi andare?", { timeout: 20000 });
   await page.waitForTimeout(1500);
   await page.screenshot({ path: `${SHOTS}/02-partenze.png` });

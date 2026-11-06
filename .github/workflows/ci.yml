@@ -113,22 +113,36 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Emulatore Android e prova offline
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: google_apis
-          arch: x86_64
-          profile: pixel_6
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
-          script: node tests/android/offline-device.mjs android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Avvia l'emulatore Android (API 34)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p android-results
+          exec > >(tee -a android-results/setup.log) 2>&1
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
+          echo "PATH=$PATH" >> "$GITHUB_ENV"
+          ls -l /dev/kvm || echo "ATTENZIONE: /dev/kvm assente"
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --install "platform-tools" "emulator" "system-images;android-34;google_apis;x86_64" > /dev/null
+          echo no | avdmanager create avd -n prova -k "system-images;android-34;google_apis;x86_64" -d pixel_6 --force
+          nohup emulator -avd prova -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none -camera-front none -no-metrics > android-results/emulator.log 2>&1 &
+          adb wait-for-device
+          timeout 420 bash -c 'until [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" = "1" ]; do sleep 5; done'
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          adb shell input keyevent 82 || true
+          echo "Emulatore pronto: Android $(adb shell getprop ro.build.version.release | tr -d '\r')"
+      - name: Prova offline sul telefono
+        shell: bash
+        run: node tests/android/offline-device.mjs android/app/build/outputs/apk/debug/app-debug.apk 2>&1 | tee android-results/console.txt; exit ${PIPESTATUS[0]}
       - name: Salva i risultati nel ramo risultati-android
         if: always() && github.event_name != 'pull_request'
         shell: bash
         run: |
           set -e
           [ -d android-results ] || exit 0
+          adb emu kill > /dev/null 2>&1 || true
           echo "${{ github.sha }} $(date -u +%FT%TZ)" > android-results/RUN.txt
           cd android-results
           git init -q -b risultati-android
