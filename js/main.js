@@ -2,9 +2,10 @@
    Dati: Transitous (orari GTFS ufficiali), OpenStreetMap, OSRM (FOSSGIS).
    Avvio: collega i moduli, aggiornamento automatico, rete, tasto Indietro. */
 
+import { initNet, isOffline, onNetChange } from "./net.js";
 import { initNav, refreshTrip, reroute, speak, stopNav, summary } from "./nav.js";
 import { goFav, homeView, openShared, showDepartures, showItin, showNearbyStops, showResults } from "./views.js";
-import { drawPins, initMap, locate, map, routeLayer } from "./map.js";
+import { drawPins, initMap, locate, map, reloadTiles, routeLayer } from "./map.js";
 import { decodePolyline, fmtDist, fmtDur, makeLine, osrmText, parseShare, prettyName, projectOn, spokenDist } from "./util.js";
 import { blurInputs, hideSugg, initPlaces, syncInputs } from "./places.js";
 import { $, SNAP, initSheet, setSheet, toast, view } from "./ui.js";
@@ -13,14 +14,14 @@ import { NAV, state, store } from "./state.js";
 // ---------- Aggiornamento automatico ----------
 function tick(force) {
   if (document.hidden && !force) return;
-  if (navigator.onLine === false) return;
+  if (isOffline()) return;
   if (state.viewKind === "departures" && state.depStop && (force || Date.now() - (state.depAt || 0) >= 30000)) showDepartures(state.depStop, true);
   refreshTrip(force);
 }
 
 // ---------- Rete: avvisi quando va e viene ----------
 function netChanged() {
-  const off = navigator.onLine === false;
+  const off = isOffline();
   $("#net").hidden = !off;
   document.body.classList.toggle("offline", off);
   return off;
@@ -34,15 +35,19 @@ initSheet(); initMap(); initPlaces(); initNav();
 $("#stopsBtn").onclick = showNearbyStops;
 setInterval(tick, 15000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) tick(); });
-window.addEventListener("offline", () => {
+onNetChange((on) => {
   netChanged();
-  if (NAV.active) { speak("Connessione persa. Continuo con il percorso già scaricato"); summary("Offline · percorso già scaricato"); }
-});
-window.addEventListener("online", () => {
-  netChanged(); toast("Di nuovo online");
+  if (!on) {
+    if (NAV.active) { speak("Connessione persa. Continuo con il percorso già scaricato"); summary("Offline · percorso già scaricato"); }
+    return;
+  }
+  toast("Di nuovo online");
+  reloadTiles(); // le zone di mappa rimaste grigie si ricaricano
   if (NAV.active) { speak("Connessione tornata"); if (NAV.kind === "road" && NAV.off >= 3 && NAV.pos) reroute(NAV.pos); }
+  tick(true);
 });
 netChanged();
+initNet();
 if ("serviceWorker" in navigator && window.isSecureContext && !isNative && !/[?&]nosw\b/.test(location.search)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }

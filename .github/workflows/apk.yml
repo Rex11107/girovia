@@ -31,13 +31,6 @@ jobs:
           distribution: temurin
           java-version: 21
       - run: npm ci
-      - name: File dell'app web
-        run: |
-          scripts/copy-app.sh www "${{ github.sha }}"
-          # Nell'APK Capacitor può inserire nella pagina uno script inline per il collegamento
-          # con il telefono: la Content-Security-Policy lo deve permettere.
-          sed -i "s/script-src 'self';/script-src 'self' 'unsafe-inline';/" www/index.html
-          grep -q "script-src 'self' 'unsafe-inline';" www/index.html
       - name: Versione
         id: ver
         env:
@@ -55,10 +48,7 @@ jobs:
             if [ ! -s notes.md ]; then echo "::error::Manca la sezione [$V] in CHANGELOG.md"; exit 1; fi
           fi
       - name: Progetto Android
-        run: |
-          npx cap add android
-          android-src/prepare.sh ${{ github.run_number }} ${{ steps.ver.outputs.version }}
-          npx cap sync android
+        run: scripts/android-project.sh ${{ github.run_number }} "${{ github.sha }}"
       - name: Compila
         working-directory: android
         run: ./gradlew --no-daemon assembleRelease

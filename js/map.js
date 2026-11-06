@@ -1,5 +1,7 @@
 // Mappa: fornitori di tile, segnaposti, fermate, posizione, disegno dei percorsi.
 
+import { cachedTile } from "./offline.js";
+import { isOffline } from "./net.js";
 import { showDepartures } from "./views.js";
 import { motis } from "./api.js";
 import { $, ICONS, cssVar, modeColor, toast } from "./ui.js";
@@ -13,17 +15,33 @@ export const map = L.map("map", { zoomControl: false, attributionControl: true }
 const DATA_ATTR = ' · Orari <a href="https://transitous.org/sources/" target="_blank" rel="noopener">Transitous e fonti</a> · Strade <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS</a>';
 const PROVIDERS = Array.isArray(CFG.tileProviders) && CFG.tileProviders.length ? CFG.tileProviders
   : [{ name: "OpenStreetMap", url: CFG.tiles || "https://tile.openstreetmap.org/{z}/{x}/{y}.png", maxZoom: 19, attribution: "© OpenStreetMap" }];
+// Tile conservate sul telefono: le zone già viste restano visibili offline (anche nell'APK)
+const CachedTiles = L.TileLayer.extend({
+  createTile(coords, done) {
+    const img = document.createElement("img");
+    img.alt = ""; img.setAttribute("role", "presentation");
+    L.DomEvent.on(img, "load", () => { if (img.src.startsWith("blob:")) URL.revokeObjectURL(img.src); this._tileOnLoad(done, img); });
+    L.DomEvent.on(img, "error", (e) => this._tileOnError(done, img, e));
+    const url = this.getTileUrl(coords);
+    cachedTile(url, isOffline())
+      .then((blob) => { img.src = URL.createObjectURL(blob); })
+      .catch(() => { if (this.options.crossOrigin) img.crossOrigin = this.options.crossOrigin; img.src = url; });
+    return img;
+  }
+});
+export function reloadTiles() { if (tileLayer) tileLayer.redraw(); }
+
 let tileLayer = null, tileIdx = 0, tileErrors = 0, tileOk = 0;
 function useProvider(i) {
   tileIdx = i; tileErrors = 0; tileOk = 0;
   const p = PROVIDERS[i];
   if (tileLayer) map.removeLayer(tileLayer);
-  tileLayer = L.tileLayer(p.url, { maxZoom: p.maxZoom || 19, subdomains: p.subdomains || "abc", crossOrigin: "anonymous", attribution: (p.attribution || "") + DATA_ATTR }).addTo(map);
+  tileLayer = new CachedTiles(p.url, { maxZoom: p.maxZoom || 19, subdomains: p.subdomains || "abc", crossOrigin: "anonymous", attribution: (p.attribution || "") + DATA_ATTR }).addTo(map);
   tileLayer.on("tileload", () => { tileOk++; });
   tileLayer.on("tileerror", () => {
     tileErrors++;
     // Molti errori e nessuna tile riuscita: il fornitore non risponde (offline escluso)
-    if (navigator.onLine !== false && tileErrors >= 8 && tileOk < 2 && tileIdx + 1 < PROVIDERS.length) {
+    if (!isOffline() && tileErrors >= 8 && tileOk < 2 && tileIdx + 1 < PROVIDERS.length) {
       useProvider(tileIdx + 1); toast("Mappa: uso " + PROVIDERS[tileIdx].name);
     }
   });

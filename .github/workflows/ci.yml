@@ -85,3 +85,55 @@ jobs:
             test-results/
             playwright-report/
           retention-days: 14
+
+  android:
+    name: Telefono Android (emulatore, prova offline)
+    needs: codice
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write # per salvare rapporto e screenshot nel ramo "risultati-android"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - name: APK di prova (debug, con la WebView ispezionabile)
+        run: |
+          scripts/android-project.sh 1 "${{ github.sha }}"
+          cd android && ./gradlew --no-daemon assembleDebug
+      - name: Abilita KVM per l'emulatore
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Emulatore Android e prova offline
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: node tests/android/offline-device.mjs android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Salva i risultati nel ramo risultati-android
+        if: always() && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -e
+          [ -d android-results ] || exit 0
+          echo "${{ github.sha }} $(date -u +%FT%TZ)" > android-results/RUN.txt
+          cd android-results
+          git init -q -b risultati-android
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "Prova Android ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" risultati-android
+

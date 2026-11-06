@@ -4,3 +4,4 @@ playwright-report/
 _site/
 www/
 android/
+android-results/

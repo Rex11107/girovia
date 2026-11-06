@@ -149,3 +149,17 @@ test("link condivisi: andata e ritorno, valori non validi scartati", () => {
   assert.equal(x.from.name, "<b>"); // il testo si mostra sempre passando da esc()
   assert.equal(x.to.name, "Punto condiviso");
 });
+
+test("dati offline: chiave indipendente dall'ora, corse già partite tolte", () => {
+  const a = U.dataKey("plan", { fromPlace: "43.77641234,11.24801", toPlace: "43.7745,11.433", time: "2026-10-21T06:00:00Z", directModes: "WALK", preTransitModes: "WALK" });
+  const b = U.dataKey("plan", { fromPlace: "43.776412,11.248009", toPlace: "43.7745,11.433", time: "2026-10-22T18:00:00Z", directModes: "WALK", preTransitModes: "WALK" });
+  assert.equal(a, b);
+  assert.notEqual(a, U.dataKey("plan", { fromPlace: "43.7764,11.248", toPlace: "43.7745,11.433", arriveBy: true, directModes: "WALK", preTransitModes: "WALK" }));
+  assert.equal(U.dataKey("plan", { pageCursor: "x" }), null);
+  assert.equal(U.dataKey("stoptimes", { stopId: "at_1", time: "ora" }), "stoptimes/at_1");
+  assert.equal(U.dataKey("geocode", { text: "  Firenze " }), "geocode/firenze");
+  assert.equal(U.dataKey("map/stops", { min: "1,2" }), null);
+  const now = Date.parse("2026-10-21T08:00:00Z");
+  const kept = U.dropDeparted([{ t: "2026-10-21T07:58:00Z" }, { t: "2026-10-21T07:59:30Z" }, { t: "2026-10-21T08:10:00Z" }, {}], (x) => x.t, now);
+  assert.deepEqual(kept.map((x) => x.t), ["2026-10-21T07:59:30Z", "2026-10-21T08:10:00Z", undefined]);
+});

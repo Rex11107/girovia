@@ -1,12 +1,15 @@
 // Servizi esterni: Transitous (orari, luoghi, percorsi con i mezzi) e OSRM (auto, piedi).
 
-import { decodePolyline, motisSteps, osrmItem, placeParam, prettify } from "./util.js";
+import { dataKey, decodePolyline, motisSteps, osrmItem, placeParam, prettify } from "./util.js";
 import { CFG } from "./state.js";
+import { isOffline } from "./net.js";
+import { loadData, saveData } from "./offline.js";
 
 // ---------- Accesso ai servizi ----------
 // Ogni richiesta ha un tempo massimo; si può anche annullare dall'esterno (nuova ricerca, uscita dalla vista).
 const TIMEOUT_MS = CFG.timeoutMs || 15000;
-class NetError extends Error { constructor(msg, kind) { super(msg); this.kind = kind; } }
+export class NetError extends Error { constructor(msg, kind) { super(msg); this.kind = kind; } }
+const OFFLINE_MSG = "Sei offline: puoi riaprire i viaggi e le fermate già consultati, il resto torna con la rete.";
 async function fetchT(url, signal, ms) {
   const ctl = new AbortController();
   const onAbort = () => ctl.abort();
@@ -17,13 +20,39 @@ async function fetchT(url, signal, ms) {
   catch (e) {
     if (timedOut) throw new NetError("Il servizio non risponde: la rete è lenta o assente. Riprova tra poco.", "timeout");
     if (e.name === "AbortError") throw e;
-    throw new NetError(navigator.onLine === false ? "Sei offline: orari e percorsi tornano quando c'è rete." : "Servizio non raggiungibile. Controlla la connessione.", "offline");
+    throw new NetError(isOffline() ? OFFLINE_MSG : "Servizio non raggiungibile. Controlla la connessione.", "offline");
   } finally { clearTimeout(timer); if (signal) signal.removeEventListener("abort", onAbort); }
 }
 // Transitous (MOTIS 2) ha più versioni delle API: si prova dalla più recente.
 const VERSIONS = { "rentals": [1], "plan": [6, 5, 4, 3, 2], "trip": [6, 5, 4, 2], "stoptimes": [6, 5, 4, 1], "map/stops": [6, 1], "geocode": [1], "reverse-geocode": [1] };
 const knownVersion = {};
+// Risposta salvata: stessi dati, con l'ora in cui erano stati letti (__savedAt)
+function fromSaved(hit) {
+  const d = prettify(hit.data);
+  Object.defineProperty(d, "__savedAt", { value: hit.at, enumerable: false });
+  return d;
+}
+
+// Con la rete chiede al servizio e salva la risposta; senza rete (o se il servizio non
+// risponde) usa l'ultima risposta salvata per la stessa ricerca, se c'è.
 export async function motis(endpoint, params, signal) {
+  const key = dataKey(endpoint, params);
+  if (isOffline()) {
+    const hit = await loadData(key);
+    if (hit) return fromSaved(hit);
+    throw new NetError(OFFLINE_MSG, "offline");
+  }
+  try {
+    const json = await motisNet(endpoint, params, signal);
+    saveData(key, json);
+    return prettify(json);
+  } catch (e) {
+    if (e.kind) { const hit = await loadData(key); if (hit) return fromSaved(hit); }
+    throw e;
+  }
+}
+
+async function motisNet(endpoint, params, signal) {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== null && v !== "") qs.set(k, Array.isArray(v) ? v.join(",") : String(v));
   const list = knownVersion[endpoint] ? [knownVersion[endpoint]] : VERSIONS[endpoint];
@@ -38,17 +67,22 @@ export async function motis(endpoint, params, signal) {
       break;
     }
     knownVersion[endpoint] = v;
-    return prettify(await res.json());
+    return res.json();
   }
   throw lastErr || new Error("Servizio orari non disponibile.");
 }
 
 export async function osrm(base, from, to, alternatives, signal) {
   const url = `${base}/route/v1/driving/${from.lon},${from.lat};${to.lon},${to.lat}?overview=full&geometries=polyline6&steps=true&alternatives=${alternatives ? "true" : "false"}`;
-  const res = await fetchT(url, signal);
+  const key = `osrm/${base.split("/").pop()}/${(+from.lat).toFixed(4)},${(+from.lon).toFixed(4)}/${(+to.lat).toFixed(4)},${(+to.lon).toFixed(4)}`;
+  const saved = async (err) => { const hit = await loadData(key); if (!hit) throw err; const r = hit.data.routes; Object.defineProperty(r, "__savedAt", { value: hit.at, enumerable: false }); return r; };
+  if (isOffline()) return saved(new NetError(OFFLINE_MSG, "offline"));
+  let res;
+  try { res = await fetchT(url, signal); } catch (e) { if (e.kind) return saved(e); throw e; }
   if (!res.ok) throw new Error("Servizio percorsi non raggiungibile (" + res.status + ").");
   const j = await res.json();
   if (j.code !== "Ok" || !j.routes || !j.routes.length) throw new Error("Nessun percorso trovato tra questi due punti.");
+  saveData(key, { routes: j.routes });
   return j.routes;
 }
 
@@ -71,7 +105,9 @@ export async function roadRoutes(mode, from, to, signal) {
   const base = routingBase(mode);
   try {
     const routes = await osrm(base, from, to, mode !== "WALK", signal);
-    return routes.map((r) => osrmItem(r, mode));
+    const items = routes.map((r) => osrmItem(r, mode));
+    if (routes.__savedAt) Object.defineProperty(items, "__savedAt", { value: routes.__savedAt, enumerable: false });
+    return items;
   } catch (first) {
     if (first.name === "AbortError" || first.kind === "offline") throw first;
     // Riserva: stesso calcolo con Transitous

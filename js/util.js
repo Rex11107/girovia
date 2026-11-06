@@ -264,3 +264,21 @@ export function parseShare(search) {
   const t = q.get("t"), time = t && !isNaN(Date.parse(t)) ? new Date(t).toISOString() : null;
   return { from, to, mode, time, arriveBy: q.get("ab") === "1" && !!time };
 }
+
+// ---------- Dati conservati per l'uso offline ----------
+// Chiave che non dipende dall'ora della richiesta: offline si riapre l'ultima risposta per la stessa ricerca
+const r4 = (s) => String(s || "").split(",").map((x) => (+x).toFixed(4)).join(",");
+export function dataKey(ep, p) {
+  p = p || {};
+  switch (ep) {
+    case "plan": return p.pageCursor ? null : `plan/${r4(p.fromPlace)}/${r4(p.toPlace)}/${p.arriveBy ? "arrivo" : "partenza"}/${p.directModes || ""}/${p.preTransitModes || ""}`;
+    case "stoptimes": return p.stopId ? `stoptimes/${p.stopId}` : null;
+    case "trip": return p.tripId ? `trip/${p.tripId}` : null;
+    case "geocode": return p.text ? `geocode/${String(p.text).trim().toLowerCase()}` : null;
+    default: return null;
+  }
+}
+// Toglie da una risposta salvata ciò che è già partito
+export function dropDeparted(list, getTime, now = Date.now()) {
+  return (list || []).filter((x) => { const t = getTime(x); return !t || new Date(t).getTime() >= now - 60000; });
+}

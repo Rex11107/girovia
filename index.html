@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Girovia</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://api.transitous.org https://routing.openstreetmap.de; worker-src 'self'; manifest-src 'self'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self'; connect-src 'self' https://api.transitous.org https://routing.openstreetmap.de https://tile.openstreetmap.org https://*.tile.openstreetmap.fr https://*.basemaps.cartocdn.com; worker-src 'self'; manifest-src 'self'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'">
 <script src="theme.js"></script>
 <meta name="description" content="Mezzi pubblici, auto e piedi per Firenze e la Toscana. Senza pubblicità e senza tracciamento.">
 <meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
@@ -48,7 +48,7 @@
     <button type="submit" hidden>Cerca</button>
   </form>
   <div id="sugg" class="card" aria-live="polite" hidden></div>
-  <div id="net" class="netpill" role="status" hidden>Sei offline · la mappa mostra le zone già viste, orari e percorsi tornano con la rete</div>
+  <div id="net" class="netpill" role="status" hidden>Sei offline · mappa, viaggi e fermate già visti restano disponibili</div>
 </div>
 
 <button id="stopsBtn" type="button" hidden>Fermate qui</button>

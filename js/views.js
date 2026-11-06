@@ -1,10 +1,11 @@
 // Schermate del pannello: iniziale, risultati, dettaglio, corsa intera, partenze.
 
+import { isOffline } from "./net.js";
 import { versionLabel } from "./version.js";
 import { startRoadNav, startTripNav } from "./nav.js";
 import { motis, roadRoutes, sharingNear } from "./api.js";
 import { drawItin, drawPins, fit, locate, map, nearbyStops, routeLayer } from "./map.js";
-import { MODE_LABEL, MODE_TITLE, collectAlerts, dayLabel, decodePolyline, delayMin, esc, fmtDay, fmtDist, fmtDur, fmtTime, isTransitLeg, itinAlerts, legAlerts, minutesUntil, modeName, motisSteps, placeParam, prettyName, rentalLabel, sameDay, shareQuery, stopModes, streetKind, ticketInfo } from "./util.js";
+import { MODE_LABEL, MODE_TITLE, collectAlerts, dayLabel, decodePolyline, delayMin, dropDeparted, esc, fmtDay, fmtDist, fmtDur, fmtTime, isTransitLeg, itinAlerts, legAlerts, minutesUntil, modeName, motisSteps, placeParam, prettyName, rentalLabel, sameDay, shareQuery, stopModes, streetKind, ticketInfo } from "./util.js";
 import { blurInputs, chosenTime, favs, hideSugg, isFav, sameTrip, setPlace, syncInputs, toggleFav, toggleTrip, trips } from "./places.js";
 import { $, ICONS, TRASH, WARN_ICON, alertsHtml, applyTheme, cssVar, errorBox, getTheme, legChip, loading, modeIcon, pushCurrent, toast, view } from "./ui.js";
 import { CFG, state, store } from "./state.js";
@@ -109,16 +110,18 @@ async function search(cursor) {
       }
       if (!plan) plan = await motis("plan", q, ctl.signal);
       if (seq !== searchSeq) return;
-      const its = (plan.itineraries || []).map((x) => ({ kind: "transit", ...x }));
+      const saved = plan.__savedAt || null;
+      let its = (plan.itineraries || []).map((x) => ({ kind: "transit", ...x }));
+      if (saved) its = dropDeparted(its, (x) => x.startTime);
       const direct = (plan.direct || []).map((x) => ({ kind: "transit", direct: true, ...x }));
       if (cursor && state.lastPlan) state.lastPlan.items = state.lastPlan.items.concat(its);
-      else state.lastPlan = { items: its, direct, mode: "TRANSIT" };
-      state.nextCursor = plan.nextPageCursor;
+      else state.lastPlan = { items: its, direct, mode: "TRANSIT", saved };
+      state.nextCursor = saved ? null : plan.nextPageCursor;
       showResults();
     } else {
       const items = await roadRoutes(state.mode, from, to, ctl.signal);
       if (seq !== searchSeq) return;
-      state.lastPlan = { items, direct: [], mode: state.mode }; state.nextCursor = null;
+      state.lastPlan = { items, direct: [], mode: state.mode, saved: items.__savedAt || null }; state.nextCursor = null;
       showResults();
     }
   } catch (e) {
@@ -154,11 +157,13 @@ export function showResults() {
   const title = MODE_TITLE[P.mode] || "Percorso";
   let html;
   if (!all.length) {
-    html = P.mode === "TRANSIT"
-      ? errorBox("Nessun collegamento con i mezzi in questo orario. Prova un altro orario, oppure scegli come partenza o arrivo una fermata vicina.")
-      : errorBox("Nessun percorso trovato.");
+    html = P.saved
+      ? errorBox(`Le soluzioni salvate alle ${fmtTime(new Date(P.saved).toISOString())} sono già partite. Riprova quando torna la rete.`)
+      : (P.mode === "TRANSIT"
+        ? errorBox("Nessun collegamento con i mezzi in questo orario. Prova un altro orario, oppure scegli come partenza o arrivo una fermata vicina.")
+        : errorBox("Nessun percorso trovato."));
   } else {
-    html = `<div class="row" style="margin-bottom:8px"><button class="btn small" data-save-trip aria-pressed="${trips().some(sameTrip)}">${trips().some(sameTrip) ? "★ Viaggio salvato" : "☆ Salva viaggio"}</button><button class="btn small" data-share>${SHARE_ICON} Condividi</button></div><div class="list">${all.map(itinCard).join("")}</div>` +
+    html = `<div class="row" style="margin-bottom:8px"><button class="btn small" data-save-trip aria-pressed="${trips().some(sameTrip)}">${trips().some(sameTrip) ? "★ Viaggio salvato" : "☆ Salva viaggio"}</button><button class="btn small" data-share>${SHARE_ICON} Condividi</button></div>${savedNote(P.saved, P.mode === "TRANSIT" ? "Risultati" : "Percorso")}<div class="list">${all.map(itinCard).join("")}</div>` +
       (P.mode === "TRANSIT" && state.nextCursor ? '<div style="margin-top:10px"><button class="btn wide" data-more>Mostra partenze successive</button></div>' : "");
   }
   view(P.mode === "TRANSIT" ? "Verso " + state.to.name : title, html, { root: true, level: 1,
@@ -232,7 +237,7 @@ async function showTrip(tripId, highlightStopId) {
     if (!l) throw new Error("Dettagli della corsa non disponibili.");
     const stops = [l.from, ...(l.intermediateStops || []), l.to];
     const now = Date.now();
-    const html = `${alertsHtml(legAlerts(l))}<div style="margin-bottom:10px">${legChip(l)} <b>→ ${esc(l.headsign || l.to.name)}</b><div class="small muted">${esc(l.agencyName || "")}${l.realTime ? ' · <span class="rt">dati in tempo reale</span>' : " · orario programmato"}</div></div>
+    const html = `${savedNote(it.__savedAt, "Corsa")}${alertsHtml(legAlerts(l))}<div style="margin-bottom:10px">${legChip(l)} <b>→ ${esc(l.headsign || l.to.name)}</b><div class="small muted">${esc(l.agencyName || "")}${l.realTime ? ' · <span class="rt">dati in tempo reale</span>' : " · orario programmato"}</div></div>
       <ol class="tripstops">${stops.map((s, k) => {
         const t = s.departure || s.arrival; const past = t && new Date(t) < now; const hl = s.stopId && s.stopId === highlightStopId;
         const isNext = !past && (k === 0 || (stops[k - 1] && new Date(stops[k - 1].departure || stops[k - 1].arrival) < now));
@@ -256,6 +261,15 @@ async function showTrip(tripId, highlightStopId) {
 }
 
 const CHECK_ICON = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+// ---------- Dati salvati (offline) ----------
+const CLOCK = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+function savedNote(at, what) {
+  if (!at) return "";
+  const d = new Date(at), today = sameDay(d.toISOString(), new Date(Date.now()).toISOString());
+  const when = today ? `alle ${fmtTime(d.toISOString())}` : `${fmtDay(d.toISOString())} alle ${fmtTime(d.toISOString())}`;
+  return `<div class="saved" role="status">${CLOCK}<span><b>${esc(what)} salvati ${esc(when)}</b>${isOffline() ? "Sei offline: si aggiornano quando torna la rete." : "Il servizio non risponde: si aggiornano appena possibile."}</span></div>`;
+}
 
 // ---------- Biglietti ----------
 function ticketHtml(l) {
@@ -322,10 +336,10 @@ export async function showDepartures(stop, refresh) {
     const r = await motis("stoptimes", { stopId: stop.id, n: 25, time: new Date(Date.now()).toISOString(), language: "it", withAlerts: true });
     // Aggiornamento in sottofondo: solo se l'utente è ancora su questa fermata
     if (refresh && !(state.viewKind === "departures" && state.depStop && state.depStop.id === stop.id)) return;
-    const list = r.stopTimes || [];
+    const list = r.__savedAt ? dropDeparted(r.stopTimes, (s) => s.place.departure || s.place.arrival) : (r.stopTimes || []);
     let lastDay = dayLabel(new Date(Date.now()).toISOString());
     const html = `<div class="row" style="margin-bottom:6px"><button class="btn small primary" data-go="to">Portami qui</button><button class="btn small" data-go="from">Parti da qui</button><button class="btn small" data-fav-stop>${isFav(stop) ? "★ Preferito" : "☆ Preferito"}</button></div>
-      ${alertsHtml(collectAlerts(r.place && r.place.alerts))}
+      ${savedNote(r.__savedAt, "Orari")}${alertsHtml(collectAlerts(r.place && r.place.alerts))}
       ${list.length ? list.map((s, i) => {
         const t = s.place.departure || s.place.arrival; const sch = s.place.scheduledDeparture || s.place.scheduledArrival;
         const day = dayLabel(t); const head = day !== lastDay ? `<div class="label">${esc(day)}</div>` : ""; lastDay = day;
@@ -337,7 +351,7 @@ export async function showDepartures(stop, refresh) {
           <span class="hs"><b>${esc(s.headsign || (s.tripTo && s.tripTo.name) || "")}</b><span class="small muted">${esc(s.agencyName || "")}${s.place.track ? " · bin. " + esc(s.place.track) : ""}${collectAlerts(s.place.alerts).length ? ` · <span class="awarn">${WARN_ICON} avviso</span>` : ""}</span></span>
           <span class="in ${s.cancelled || s.tripCancelled ? "cancel" : ""}">${when}<small>${fmtTime(t)}${s.realTime ? (dd > 0 ? ` <span class="late">+${dd}</span>` : ' <span class="rt">live</span>') : ""}</small></span></button>`;
       }).join("") : '<p class="empty">Nessuna partenza trovata da questa fermata.</p>'}
-      <p class="small muted" style="margin:10px 0 0">Aggiornato alle ${fmtTime(new Date(Date.now()).toISOString())} · si aggiorna da solo</p>`;
+      ${r.__savedAt ? "" : `<p class="small muted" style="margin:10px 0 0">Aggiornato alle ${fmtTime(new Date(Date.now()).toISOString())} · si aggiorna da solo</p>`}`;
     const scroll = refresh ? $("#sheetBody").scrollTop : 0;
     state.depStop = stop; state.depAt = Date.now();
     view(stop.name, html, { level: refresh ? null : 1, kind: "departures", draw: refresh ? null : () => { routeLayer.clearLayers(); L.circleMarker([stop.lat, stop.lon], { radius: 8, color: cssVar("--surface"), weight: 3, fillColor: cssVar("--transit"), fillOpacity: 1 }).addTo(routeLayer); }, bind: (root) => {

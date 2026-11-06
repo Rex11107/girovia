@@ -15,9 +15,9 @@ window.GIROVIA_CONFIG = {
   // Indirizzo usato nei link "Condividi" (deve essere la versione web dell'app)
   shareBase: "https://rex11107.github.io/girovia/",
 
-  // Sicurezza: index.html ha una Content-Security-Policy. Se cambi "transitous" o i
-  // server di routing qui sotto, aggiungi il nuovo indirizzo anche in connect-src.
-  // Le tile (immagini) possono arrivare da qualsiasi indirizzo https.
+  // Sicurezza: index.html ha una Content-Security-Policy. Se cambi "transitous", i server
+  // di routing o i fornitori di tile qui sotto, aggiungi il nuovo indirizzo in connect-src
+  // (le tile si scaricano con fetch per conservarle offline; senza, si vedono ma non si salvano).
 
   // Mappa: fornitori di tile in ordine di preferenza. Se il primo smette di rispondere
   // (molte tile in errore), l'app passa da sola al successivo.

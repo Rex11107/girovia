@@ -1,5 +1,6 @@
 // Navigazione: auto e piedi con voce e ricalcolo; mezzi con avvisi di discesa.
 
+import { isOffline } from "./net.js";
 import { motis, osrm, routingBase } from "./api.js";
 import { drawItin, map, routeLayer, showMe } from "./map.js";
 import { decodePolyline, fmtDist, fmtDur, fmtTime, isTransitLeg, itinAlerts, legAlerts, lineName, lowerFirst, makeLine, motisSteps, osrmItem, projectOn, rentalLabel, spokenDist, streetKind } from "./util.js";
@@ -154,7 +155,7 @@ export async function reroute(p) {
     setRoute(makeLine(it.geometry), it.steps, it.duration);
     drawNav(it.geometry, modeColor(NAV.mode), NAV.mode === "WALK");
   } catch (e) {
-    if (navigator.onLine === false) summary("Offline · ricalcolo appena torna la rete");
+    if (isOffline()) summary("Offline · ricalcolo appena torna la rete");
     else toast("Ricalcolo non riuscito: " + e.message);
   }
 }
