@@ -1,0 +1,152 @@
+{
+ "requested08": "2026-11-09T07:00:00.000Z",
+ "stopId": "it-Bolzano-STA_Parentit:22033:7026",
+ "at08": [
+  {
+   "dep": "2026-11-09T07:00:00Z",
+   "sched": "2026-11-09T07:00:00Z",
+   "stopId": "it-Toscana-AT_139517",
+   "stop": "SCALA ORTI ORICELLARI",
+   "route": "C4",
+   "headsign": "PRESIDIO OSPEDALIERO PALAGI",
+   "tripId": "20261109_07:55_it-Toscana-AT_10761-4",
+   "agency": "at - Firenze urbano",
+   "realTime": false,
+   "source": "it_Toscana-AT.gtfs.zip/stop_times.txt:4533443:4533462"
+  },
+  {
+   "dep": "2026-11-09T07:00:00Z",
+   "sched": "2026-11-09T07:00:00Z",
+   "stopId": "it-Toscana-AT_140333",
+   "stop": "STAZIONE ORTI ORICELLARI",
+   "route": "C2",
+   "headsign": "LEOPARDI GRAMSCI",
+   "tripId": "20261109_07:56_it-Toscana-AT_28806-4",
+   "agency": "at - Firenze urbano",
+   "realTime": false,
+   "source": "it_Toscana-AT.gtfs.zip/stop_times.txt:5420598:5420610"
+  },
+  {
+   "dep": "2026-11-09T07:00:00Z",
+   "sched": "2026-11-09T07:00:00Z",
+   "stopId": "it-Toscana-Autolinee-LineeRegionali_139517",
+   "stop": "SCALA ORTI ORICELLARI",
+   "route": "C4",
+   "headsign": "PRESIDIO OSPEDALIERO PALAGI",
+   "tripId": "20261109_07:55_it-Toscana-Autolinee-LineeRegionali_10761-4",
+   "agency": "at - Firenze urbano",
+   "realTime": false,
+   "source": "it_Toscana-Autolinee-LineeRegionali.gtfs.zip/stop_times.txt:4533463:4533482"
+  },
+  {
+   "dep": "2026-11-09T07:00:00Z",
+   "sched": "2026-11-09T07:00:00Z",
+   "stopId": "it-Toscana-Autolinee-LineeRegionali_140333",
+   "stop": "STAZIONE ORTI ORICELLARI",
+   "route": "C2",
+   "headsign": "LEOPARDI GRAMSCI",
+   "tripId": "20261109_07:56_it-Toscana-Autolinee-LineeRegionali_28806-4",
+   "agency": "at - Firenze urbano",
+   "realTime": false,
+   "source": "it_Toscana-Autolinee-LineeRegionali.gtfs.zip/stop_times.txt:5420611:5420623"
+  },
+  {
+   "dep": "2026-11-09T07:00:00Z",
+   "sched": "2026-11-09T07:00:00Z",
+   "stopId": "it-Toscana-GEST_FM9027_103",
+   "stop": "Alamanni - Stazione Smn",
+   "route": "T2",
+   "headsign": "Peretola Aeroporto",
+   "tripId": "20261109_07:47_it-Toscana-GEST_7059_718987",
+   "agency": "GEST S.p.A.",
+   "realTime": false,
+   "source": "it_Toscana-GEST.gtfs.zip/stop_times.txt:86927:86945"
+  },
+  {
+   "dep": "2026-11-09T07:01:00Z",
+   "sched": "2026-11-09T07:01:00Z",
+   "stopId": "it-Toscana-AT_139816",
+   "stop": "STAZIONE SCALETTE",
+   "route": "11",
+   "headsign": "LA GORA",
+   "tripId": "20261109_07:29_it-Toscana-AT_36317-3",
+   "agency": "at - Firenze urbano",
+   "realTime": false,
+   "source": "it_Toscana-AT.gtfs.zip/stop_times.txt:4434439:4434473"
+  },
+  {
+   "dep": "2026-11-09T07:01:00Z",
+   "sched": "2026-11-09T07:01:00Z",
+   "stopId": "it-Toscana-AT_139517",
+   "stop": "SCALA ORTI ORICELLARI",
+   "route": "37",
+   "headsign": "TAVARNUZZE PRIMO MAGGIO",
+   "tripId": "20261109_07:59_it-Toscana-AT_11395-5",
+   "agency": "at - Firenze urbano",
+   "realTime": false,
+   "source": "it_Toscana-AT.gtfs.zip/stop_times.txt:4603844:4603870"
+  },
+  {
+   "dep": "2026-11-09T07:01:00Z",
+   "sched": "2026-11-09T07:01:00Z",
+   "stopId": "it-Toscana-Autolinee-LineeRegionali_139816",
+   "stop": "STAZIONE SCALETTE",
+   "route": "11",
+   "headsign": "LA GORA",
+   "tripId": "20261109_07:29_it-Toscana-Autolinee-LineeRegionali_36317-3",
+   "agency": "at - Firenze urbano",
+   "realTime": false,
+   "source": "it_Toscana-Autolinee-LineeRegionali.gtfs.zip/stop_times.txt:4421991:4422026"
+  },
+  {
+   "dep": "2026-11-09T07:01:00Z",
+   "sched": "2026-11-09T07:01:00Z",
+   "stopId": "it-Toscana-Autolinee-LineeRegionali_139517",
+   "stop": "SCALA ORTI ORICELLARI",
+   "route": "37",
+   "headsign": "TAVARNUZZE PRIMO MAGGIO",
+   "tripId": "20261109_07:59_it-Toscana-Autolinee-LineeRegionali_11395-5",
+   "agency": "at - Firenze urbano",
+   "realTime": false,
+   "source": "it_Toscana-Autolinee-LineeRegionali.gtfs.zip/stop_times.txt:4614915:4614940"
+  },
+  {
+   "dep": "2026-11-09T07:01:00Z",
+   "sched": "2026-11-09T07:01:00Z",
+   "stopId": "it-Toscana-GEST_FM9027_103",
+   "stop": "Alamanni - Stazione Smn",
+   "route": "T2",
+   "headsign": "San Marco",
+   "tripId": "20261109_07:42_it-Toscana-GEST_7059_719108",
+   "agency": "GEST S.p.A.",
+   "realTime": false,
+   "source": "it_Toscana-GEST.gtfs.zip/stop_times.txt:118799:118817"
+  },
+  {
+   "dep": "2026-11-09T07:01:00Z",
+   "sched": "2026-11-09T07:01:00Z",
+   "stopId": "it-Toscana-GEST_FM9028_103",
+   "stop": "Valfonda - Stazione Smn",
+   "route": "T1.3",
+   "headsign": "Careggi - Ospedale",
+   "tripId": "20261109_07:37_it-Toscana-GEST_7059_715270",
+   "agency": "GEST S.p.A.",
+   "realTime": false,
+   "source": "it_Toscana-GEST.gtfs.zip/stop_times.txt:3016:3039"
+  },
+  {
+   "dep": "2026-11-09T07:01:00Z",
+   "sched": "2026-11-09T07:01:00Z",
+   "stopId": "it-Toscana-GEST_FM9027_103",
+   "stop": "Alamanni - Stazione Smn",
+   "route": "T1.3",
+   "headsign": "Villa Costanza",
+   "tripId": "20261109_07:42_it-Toscana-GEST_7059_715509",
+   "agency": "GEST S.p.A.",
+   "realTime": false,
+   "source": "it_Toscana-GEST.gtfs.zip/stop_times.txt:48596:48619"
+  }
+ ],
+ "requestedNow": "2026-11-06T13:00:13.609Z",
+ "now": []
+}
