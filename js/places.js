@@ -1,7 +1,8 @@
 // Ricerca dei luoghi, partenza e arrivo, preferiti e viaggi salvati, mezzo e orario.
 
 import { state, store } from "./state.js";
-import { motis } from "./api.js";
+import { motis, OFFLINE_MSG } from "./api.js";
+import { isOffline } from "./net.js";
 import { homeView, maybeSearch, showDepartures } from "./views.js";
 import { drawPins, locate, map, routeLayer } from "./map.js";
 import { areaLabel, esc, placeLabel, prettyName, samePlace, stopModes } from "./util.js";
@@ -15,6 +16,7 @@ function onType(field) {
   const q = input.value.trim();
   if (q.length < 2) { showSuggDefaults(field); return; }
   const box = $("#sugg");
+  if (isOffline()) { if (geoAbort) geoAbort.abort(); renderSugg(field, [], OFFLINE_MSG); return; }
   if (!box.querySelector("[data-searching]")) { box.innerHTML = '<div class="empty" data-searching style="padding:12px">Cerco…</div>'; box.hidden = false; }
   geoTimer = setTimeout(async () => {
     if (geoAbort) geoAbort.abort(); geoAbort = new AbortController();
