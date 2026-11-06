@@ -2,6 +2,22 @@
 
 Le versioni seguono [Semantic Versioning](https://semver.org/lang/it/). Ogni sezione diventa la nota della release su GitHub.
 
+## [0.2.1] - 2026-11-06
+
+### Corretto
+- **Offline nell'APK**: prima non compariva l'avviso, la mappa restava vuota e le ricerche si fermavano. Ora lo stato della rete arriva da Android (in modalità aereo il browser interno credeva di essere ancora online) e la mappa conserva le zone già viste anche nell'APK.
+
+### Nuovo
+- Senza rete restano disponibili **orari delle fermate, risultati, corse intere e percorsi già visti**, con l'ora in cui erano stati letti ("Orari salvati alle 08:30") e senza le corse già partite.
+- Senza rete le ricerche rispondono subito, senza aspettare, e dicono cosa si può ancora aprire.
+- Quando la rete torna, la mappa e le schermate si aggiornano da sole.
+
+### Controlli
+- Prova completa dell'APK su un emulatore Android a ogni modifica: online, modalità aereo, app riaperta offline, ritorno online, con screenshot del telefono.
+
+### Aggiornamenti
+- Capacitor 8.5.3, ESLint 10, Playwright 1.64 e azioni di GitHub più recenti.
+
 ## [0.2.0] - 2026-10-21
 
 ### Nuovo
