@@ -16,7 +16,7 @@ export function homeView(tab) {
   tab = TABS.some(([k]) => k === tab) ? tab : (store("homeTab") || "recent");
   store("homeTab", tab);
   const rec = store("recent") || [], tr = trips(), f = favs();
-  let body = "";
+  let body;
   if (tab === "recent") {
     body = rec.length ? rec.map((r, i) => row(`data-r="${i}"`, ICONS[r.type] || ICONS.RECENT, prettyName(r.name), r.sub, "")).join("") +
       '<button class="btn small" data-clear-recent style="margin-top:10px">Cancella cronologia</button>'

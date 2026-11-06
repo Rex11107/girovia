@@ -20,7 +20,7 @@ jobs:
   pubblica:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Copia l'app nel ramo gh-pages
         shell: bash
         run: |
