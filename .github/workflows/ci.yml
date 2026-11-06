@@ -121,12 +121,19 @@ jobs:
           exec > >(tee -a android-results/setup.log) 2>&1
           export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH"
           echo "PATH=$PATH" >> "$GITHUB_ENV"
+          # stessa cartella per avdmanager ed emulator (altrimenti l'emulatore non trova il telefono virtuale)
+          export ANDROID_AVD_HOME="$HOME/.android/avd"; mkdir -p "$ANDROID_AVD_HOME"
+          echo "ANDROID_AVD_HOME=$ANDROID_AVD_HOME" >> "$GITHUB_ENV"
           ls -l /dev/kvm || echo "ATTENZIONE: /dev/kvm assente"
           yes | sdkmanager --licenses > /dev/null || true
           sdkmanager --install "platform-tools" "emulator" "system-images;android-34;google_apis;x86_64" > /dev/null
           echo no | avdmanager create avd -n prova -k "system-images;android-34;google_apis;x86_64" -d pixel_6 --force
+          emulator -list-avds
           nohup emulator -avd prova -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none -camera-front none -no-metrics > android-results/emulator.log 2>&1 &
-          adb wait-for-device
+          EMU=$!
+          sleep 10
+          if ! kill -0 "$EMU" 2>/dev/null; then echo "L'emulatore si è chiuso:"; tail -20 android-results/emulator.log; exit 1; fi
+          timeout 300 adb wait-for-device
           timeout 420 bash -c 'until [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" = "1" ]; do sleep 5; done'
           adb shell settings put global window_animation_scale 0
           adb shell settings put global transition_animation_scale 0
