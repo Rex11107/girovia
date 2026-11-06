@@ -333,7 +333,11 @@ export async function showDepartures(stop, refresh) {
     map.setView([stop.lat, stop.lon], Math.max(map.getZoom(), 16));
   }
   try {
-    const r = await motis("stoptimes", { stopId: stop.id, n: 25, time: new Date(Date.now()).toISOString(), language: "it", withAlerts: true });
+    const q = { stopId: stop.id, center: `${stop.lat},${stop.lon}`, n: 25, time: new Date(Date.now()).toISOString(), language: "it", withAlerts: true };
+    let r = await motis("stoptimes", q);
+    // Alcune stazioni (es. "Stazione di Firenze Santa Maria Novella") non hanno corse proprie:
+    // si includono binari e fermate entro 250 m
+    if (!r.__savedAt && !(r.stopTimes || []).length) r = await motis("stoptimes", { ...q, radius: 250 });
     // Aggiornamento in sottofondo: solo se l'utente è ancora su questa fermata
     if (refresh && !(state.viewKind === "departures" && state.depStop && state.depStop.id === stop.id)) return;
     const list = r.__savedAt ? dropDeparted(r.stopTimes, (s) => s.place.departure || s.place.arrival) : (r.stopTimes || []);

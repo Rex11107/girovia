@@ -46,7 +46,11 @@ async function setup(page, opts = {}) {
       }
       return route.fulfill({ json: p });
     }
-    if (u.includes("/stoptimes")) return route.fulfill({ json: FX.stoptimes });
+    if (u.includes("/stoptimes")) {
+      // stazione "madre" senza corse proprie: le partenze arrivano solo includendo le fermate vicine
+      if (opts.emptyStation && !u.includes("radius=")) return route.fulfill({ json: { ...FX.stoptimes, stopTimes: [] } });
+      return route.fulfill({ json: FX.stoptimes });
+    }
     if (u.includes("/trip")) return route.fulfill({ json: FX.trip });
     if (u.includes("routing.openstreetmap.de")) return route.fulfill({ json: FX.osrm });
     return route.fulfill({ status: 500, body: "non previsto: " + u });
@@ -152,4 +156,13 @@ test("quattro mezzi stanno in una riga anche su telefono stretto", async ({ page
   expect(new Set(tops).size).toBe(1);
   const w = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
   expect(w[0]).toBeLessThanOrEqual(w[1]);
+});
+
+test("stazione senza corse proprie: partenze dalle fermate entro 250 m", async ({ page }) => {
+  const { calls } = await setup(page, { emptyStation: true });
+  await pick(page, "from", "Firenze");
+  await expect(page.locator(".dep")).toHaveCount(3);
+  const st = calls.filter((u) => u.includes("/stoptimes"));
+  expect(st.some((u) => !u.includes("radius=") && u.includes("center=43.7764,11.248"))).toBe(true);
+  expect(st.some((u) => u.includes("radius=250"))).toBe(true);
 });

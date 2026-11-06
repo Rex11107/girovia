@@ -2,6 +2,6 @@ node_modules/
 test-results/
 playwright-report/
 _site/
-www/
-android/
+/www/
+/android/
 android-results/

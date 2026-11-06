@@ -109,7 +109,9 @@ async function main() {
   log("\n## Partenze da una fermata");
   try {
     if (!smnStop) throw new Error("fermata SMN non trovata dalla ricerca");
-    const r = await motis("stoptimes", { stopId: smnStop.id, n: 10, time, language: "it" });
+    const sq = { stopId: smnStop.id, center: `${smnStop.lat},${smnStop.lon}`, n: 10, time, language: "it" };
+    let r = await motis("stoptimes", sq);
+    if (!(r.stopTimes || []).length) { log("  (nessuna corsa propria: riprovo con le fermate entro 250 m, come fa l'app)"); r = await motis("stoptimes", { ...sq, radius: 250 }); }
     const st = r.stopTimes || [];
     const now = await motis("stoptimes", { stopId: smnStop.id, n: 15, time: new Date().toISOString(), language: "it" });
     const slim = (x) => ({ dep: x.place.departure, sched: x.place.scheduledDeparture, stopId: x.place.stopId, stop: x.place.name, route: x.routeShortName, headsign: x.headsign, tripId: x.tripId, agency: x.agencyName, realTime: x.realTime, looped: x.loopedCalendarSince, source: x.source });
