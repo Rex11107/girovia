@@ -9,7 +9,7 @@ import { loadData, saveData } from "./offline.js";
 // Ogni richiesta ha un tempo massimo; si può anche annullare dall'esterno (nuova ricerca, uscita dalla vista).
 const TIMEOUT_MS = CFG.timeoutMs || 15000;
 export class NetError extends Error { constructor(msg, kind) { super(msg); this.kind = kind; } }
-const OFFLINE_MSG = "Sei offline: puoi riaprire i viaggi e le fermate già consultati, il resto torna con la rete.";
+export const OFFLINE_MSG = "Sei offline: puoi riaprire i viaggi e le fermate già consultati, il resto torna con la rete.";
 async function fetchT(url, signal, ms) {
   const ctl = new AbortController();
   const onAbort = () => ctl.abort();

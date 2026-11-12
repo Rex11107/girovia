@@ -155,11 +155,13 @@ async function main() {
   await airplane(false);
   await check("L'avviso offline sparisce", async () => { await page.locator("#net").waitFor({ state: "hidden", timeout: 30000 }); });
   await check("La ricerca torna a funzionare", async () => {
-    await page.fill("#to", "Pontassieve");
-    await page.waitForFunction(() => { const b = document.querySelector("#sugg button"); return b && /Pontassieve/i.test(b.textContent); }, null, { timeout: 30000 });
-    await page.locator("#sugg button").first().click();
-    await page.waitForFunction(() => document.querySelector(".itin") || document.querySelector(".err") || document.querySelector(".dep"), null, { timeout: 60000 });
+    // luogo mai cercato prima: il suggerimento può arrivare solo dalla rete
+    await pick("to", "Pontassieve");
+    await pick("from", "Fiesole");
+    await page.waitForFunction(() => document.querySelector(".itin") || document.querySelector(".err"), null, { timeout: 60000 });
+    if (await page.locator(".err").count()) throw new Error(await page.locator(".err").first().textContent());
     if (await page.locator(".saved").count()) throw new Error("mostra ancora dati salvati");
+    return `${await page.locator(".itin").count()} soluzioni Fiesole → Pontassieve`;
   });
   shot("di-nuovo-online");
 }

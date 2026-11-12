@@ -6,6 +6,7 @@ Le versioni seguono [Semantic Versioning](https://semver.org/lang/it/). Ogni sez
 
 ### Corretto
 - **Offline nell'APK**: prima non compariva l'avviso, la mappa restava vuota e le ricerche si fermavano. Ora lo stato della rete arriva da Android (in modalità aereo il browser interno credeva di essere ancora online) e la mappa conserva le zone già viste anche nell'APK.
+- **Partenze delle grandi stazioni** (es. Santa Maria Novella): la stazione principale a volte non ha corse proprie; ora l'app mostra anche quelle delle fermate entro 250 m.
 
 ### Nuovo
 - Senza rete restano disponibili **orari delle fermate, risultati, corse intere e percorsi già visti**, con l'ora in cui erano stati letti ("Orari salvati alle 08:30") e senza le corse già partite.
