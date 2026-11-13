@@ -1,0 +1,123 @@
+--------- beginning of main
+11-13 13:53:22.943 W/chromium( 1802): [1113/135322.943419:WARNING:dns_config_service_android.cc(81)] Failed to read DnsConfig.
+11-13 13:53:41.984 D/Capacitor( 4064): Starting BridgeActivity
+11-13 13:53:42.022 D/Capacitor( 4064): Registering plugin instance: CapacitorCookies
+11-13 13:53:42.027 D/Capacitor( 4064): Registering plugin instance: WebView
+11-13 13:53:42.034 D/Capacitor( 4064): Registering plugin instance: CapacitorHttp
+11-13 13:53:42.040 D/Capacitor( 4064): Registering plugin instance: SystemBars
+11-13 13:53:42.046 D/Capacitor( 4064): Registering plugin instance: KeepAwake
+11-13 13:53:42.048 D/Capacitor( 4064): Registering plugin instance: TextToSpeech
+11-13 13:53:42.067 D/Capacitor( 4064): Registering plugin instance: App
+11-13 13:53:42.069 D/Capacitor( 4064): Registering plugin instance: Haptics
+11-13 13:53:42.078 D/Capacitor( 4064): Registering plugin instance: LocalNotifications
+11-13 13:53:42.135 D/Capacitor( 4064): Registering plugin instance: Network
+11-13 13:53:42.136 D/Capacitor( 4064): Registering plugin instance: Share
+11-13 13:53:42.170 W/Capacitor( 4064): Unable to read file at path public/plugins
+11-13 13:53:42.175 D/Capacitor( 4064): Loading app at https://rex11107.github.io
+11-13 13:53:42.243 D/Capacitor( 4064): App started
+11-13 13:53:42.283 D/Capacitor( 4064): App resumed
+11-13 13:53:42.333 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/
+11-13 13:53:42.948 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/theme.js
+11-13 13:53:43.286 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/vendor/leaflet/leaflet.css
+11-13 13:53:43.304 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/styles.css
+11-13 13:53:43.353 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/vendor/leaflet/leaflet.js
+11-13 13:53:43.428 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/fonts/atkinson-hyperlegible-latin-400-normal.woff2
+11-13 13:53:43.479 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/fonts/atkinson-hyperlegible-latin-700-normal.woff2
+11-13 13:53:43.489 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/fonts/barlow-condensed-latin-700-normal.woff2
+11-13 13:53:43.946 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/config.js
+11-13 13:53:46.098 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/js/main.js
+11-13 13:53:46.311 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/js/nav.js
+11-13 13:53:46.311 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/js/views.js
+11-13 13:53:46.312 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/js/util.js
+11-13 13:53:46.320 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/js/places.js
+11-13 13:53:46.321 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/js/state.js
+11-13 13:53:46.322 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/js/ui.js
+11-13 13:53:46.325 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/js/map.js
+11-13 13:53:46.326 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/js/net.js
+11-13 13:53:46.522 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/js/offline.js
+11-13 13:53:46.523 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/js/api.js
+11-13 13:53:46.524 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/js/version.js
+11-13 13:53:46.700 I/Capacitor/Console( 4064): File:  - Line 349 - Msg: [object Object]
+11-13 13:53:46.704 V/Capacitor( 4064): callback: 64520260, pluginId: Network, methodName: getStatus, methodData: {}
+11-13 13:53:46.726 I/Capacitor/Console( 4064): File:  - Line 349 - Msg: [object Object]
+11-13 13:53:46.727 V/Capacitor( 4064): callback: 64520261, pluginId: App, methodName: getLaunchUrl, methodData: {}
+11-13 13:53:46.727 I/Capacitor/Console( 4064): File:  - Line 349 - Msg: [object Object]
+11-13 13:53:46.742 V/Capacitor( 4064): callback: 64520262, pluginId: App, methodName: addListener, methodData: {"eventName":"appUrlOpen"}
+11-13 13:53:46.744 I/Capacitor/Console( 4064): File:  - Line 349 - Msg: [object Object]
+11-13 13:53:46.745 V/Capacitor( 4064): callback: 64520263, pluginId: App, methodName: addListener, methodData: {"eventName":"backButton"}
+11-13 13:53:46.798 I/Capacitor/Console( 4064): File:  - Line 333 - Msg: {"connected":true,"connectionType":"wifi"}
+11-13 13:53:46.822 I/Capacitor/Console( 4064): File:  - Line 349 - Msg: [object Object]
+11-13 13:53:46.829 V/Capacitor( 4064): callback: 64520264, pluginId: Network, methodName: addListener, methodData: {"eventName":"networkStatusChange"}
+11-13 13:53:46.837 I/Capacitor/Console( 4064): File:  - Line 333 - Msg: undefined
+11-13 13:53:47.110 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/icon.svg
+11-13 13:53:53.155 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/icon.svg
+11-13 13:53:57.797 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/icon.svg
+11-13 13:54:02.258 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/icon.svg
+11-13 13:54:05.041 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/icon.svg
+11-13 13:54:05.754 D/Capacitor( 4064): Handling local request: https://rex11107.github.io/fonts/barlow-condensed-latin-600-normal.woff2
+11-13 13:54:14.048 I/Capacitor/Console( 4064): File:  - Line 333 - Msg: {"connected":false,"connectionType":"none"}
+11-13 13:54:19.942 W/chromium( 5340): [WARNING:dns_config_service_android.cc(115)] Failed to read DnsConfig.
+11-13 13:54:19.963 E/chromium( 5340): [ERROR:simple_version_upgrade.cc(152)] Failed to write a new fake index.
+11-13 13:54:19.964 E/chromium( 5340): [ERROR:simple_file_enumerator.cc(21)] opendir /data/user/0/io.github.rex11107.girovia/cache/WebView/Default/HTTP Cache/Code Cache/js: No such file or directory (2)
+11-13 13:54:19.964 E/chromium( 5340): [ERROR:simple_index_file.cc(614)] Could not reconstruct index from disk
+11-13 13:54:20.100 D/Capacitor( 5340): Starting BridgeActivity
+11-13 13:54:20.119 D/Capacitor( 5340): Registering plugin instance: CapacitorCookies
+11-13 13:54:20.126 D/Capacitor( 5340): Registering plugin instance: WebView
+11-13 13:54:20.127 D/Capacitor( 5340): Registering plugin instance: CapacitorHttp
+11-13 13:54:20.129 D/Capacitor( 5340): Registering plugin instance: SystemBars
+11-13 13:54:20.130 D/Capacitor( 5340): Registering plugin instance: KeepAwake
+11-13 13:54:20.131 D/Capacitor( 5340): Registering plugin instance: TextToSpeech
+11-13 13:54:20.148 D/Capacitor( 5340): Registering plugin instance: App
+11-13 13:54:20.149 D/Capacitor( 5340): Registering plugin instance: Haptics
+11-13 13:54:20.150 D/Capacitor( 5340): Registering plugin instance: LocalNotifications
+11-13 13:54:20.162 D/Capacitor( 5340): Registering plugin instance: Network
+11-13 13:54:20.163 D/Capacitor( 5340): Registering plugin instance: Share
+11-13 13:54:20.224 W/Capacitor( 5340): Unable to read file at path public/plugins
+11-13 13:54:20.232 D/Capacitor( 5340): Loading app at https://rex11107.github.io
+11-13 13:54:20.314 D/Capacitor( 5340): App started
+11-13 13:54:20.334 D/Capacitor( 5340): App resumed
+11-13 13:54:20.365 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/
+11-13 13:54:21.086 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/theme.js
+11-13 13:54:21.315 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/vendor/leaflet/leaflet.css
+11-13 13:54:21.318 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/styles.css
+11-13 13:54:21.394 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/vendor/leaflet/leaflet.js
+11-13 13:54:21.627 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/fonts/atkinson-hyperlegible-latin-400-normal.woff2
+11-13 13:54:21.662 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/fonts/atkinson-hyperlegible-latin-700-normal.woff2
+11-13 13:54:21.678 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/fonts/barlow-condensed-latin-700-normal.woff2
+11-13 13:54:21.979 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/config.js
+11-13 13:54:24.361 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/js/main.js
+11-13 13:54:24.555 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/js/net.js
+11-13 13:54:24.560 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/js/nav.js
+11-13 13:54:24.604 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/js/views.js
+11-13 13:54:24.605 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/js/map.js
+11-13 13:54:24.609 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/js/util.js
+11-13 13:54:24.615 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/js/places.js
+11-13 13:54:24.618 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/js/ui.js
+11-13 13:54:24.636 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/js/state.js
+11-13 13:54:24.645 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/js/api.js
+11-13 13:54:24.657 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/js/offline.js
+11-13 13:54:24.665 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/js/version.js
+11-13 13:54:24.826 I/Capacitor/Console( 5340): File:  - Line 349 - Msg: [object Object]
+11-13 13:54:24.836 V/Capacitor( 5340): callback: 63728065, pluginId: Network, methodName: getStatus, methodData: {}
+11-13 13:54:24.836 I/Capacitor/Console( 5340): File:  - Line 349 - Msg: [object Object]
+11-13 13:54:24.841 V/Capacitor( 5340): callback: 63728066, pluginId: App, methodName: getLaunchUrl, methodData: {}
+11-13 13:54:24.841 I/Capacitor/Console( 5340): File:  - Line 349 - Msg: [object Object]
+11-13 13:54:24.842 V/Capacitor( 5340): callback: 63728067, pluginId: App, methodName: addListener, methodData: {"eventName":"appUrlOpen"}
+11-13 13:54:24.842 I/Capacitor/Console( 5340): File:  - Line 349 - Msg: [object Object]
+11-13 13:54:24.843 V/Capacitor( 5340): callback: 63728068, pluginId: App, methodName: addListener, methodData: {"eventName":"backButton"}
+11-13 13:54:24.925 I/Capacitor/Console( 5340): File:  - Line 333 - Msg: {"connected":false,"connectionType":"none"}
+11-13 13:54:24.926 I/Capacitor/Console( 5340): File:  - Line 349 - Msg: [object Object]
+11-13 13:54:24.930 V/Capacitor( 5340): callback: 63728069, pluginId: Network, methodName: addListener, methodData: {"eventName":"networkStatusChange"}
+11-13 13:54:24.937 I/Capacitor/Console( 5340): File:  - Line 333 - Msg: undefined
+11-13 13:54:24.992 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/icon.svg
+11-13 13:54:28.164 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/fonts/barlow-condensed-latin-600-normal.woff2
+11-13 13:54:37.529 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/icon.svg
+11-13 13:54:38.374 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/icon.svg
+11-13 13:54:42.732 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/icon.svg
+11-13 13:54:46.077 I/Capacitor/Console( 5340): File:  - Line 333 - Msg: {"connected":false,"connectionType":"cellular"}
+11-13 13:54:46.418 I/Capacitor/Console( 5340): File:  - Line 333 - Msg: {"connected":true,"connectionType":"cellular"}
+11-13 13:54:46.706 I/Capacitor/Console( 5340): File:  - Line 333 - Msg: {"connected":true,"connectionType":"cellular"}
+11-13 13:54:49.139 I/Capacitor/Console( 5340): File:  - Line 333 - Msg: {"connected":true,"connectionType":"wifi"}
+11-13 13:54:49.145 I/Capacitor/Console( 5340): File:  - Line 333 - Msg: {"connected":true,"connectionType":"wifi"}
+11-13 13:54:51.586 I/Capacitor/Console( 5340): File:  - Line 333 - Msg: {"connected":true,"connectionType":"wifi"}
+11-13 13:54:59.660 D/Capacitor( 5340): Handling local request: https://rex11107.github.io/icon.svg

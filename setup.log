@@ -1,0 +1,7 @@
+crw-rw-rw- 1 root kvm 10, 232 Nov 13 13:51 /dev/kvm
+yes: standard output: Broken pipe
+Loading local repository...                                                     [=========                              ] 25% Loading local repository...       Auto-selecting single ABI x86_64
+prova
+* daemon not running; starting now at tcp:5037
+* daemon started successfully
+Emulatore pronto: Android 14
